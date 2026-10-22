@@ -12,9 +12,9 @@ Add-Type -AssemblyName System.Drawing
 . (Join-Path $PSScriptRoot 'rasterizer.ps1')
 $manifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'manifest.json') -Raw | ConvertFrom-Json
 $ink = $manifest.ink
-$categories = @('Analysis','Connection','Geometry','Loads','Material','Model','Results')
-if ($manifest.icons.Count -ne 15) { throw 'Expected 15 component icons.' }
-if (@($manifest.icons.id | Sort-Object -Unique).Count -ne 15) { throw 'Duplicate icon ID.' }
+$categories = @($manifest.palette.PSObject.Properties.Name)
+if ($manifest.icons.Count -eq 0) { throw 'Expected component icons.' }
+if (@($manifest.icons.id | Sort-Object -Unique).Count -ne $manifest.icons.Count) { throw 'Duplicate icon ID.' }
 foreach ($size in @(24,48,96)) {
     New-Item -ItemType Directory -Path (Join-Path $PSScriptRoot "png/$size") -Force | Out-Null
 }
@@ -46,4 +46,4 @@ foreach ($item in $manifest.icons) {
     }
 }
 
-Write-Output 'Validated 15 SVGs and 45 PNGs: category palette, dimensions, non-empty artwork and transparent background.'
+Write-Output "Validated $($manifest.icons.Count) SVGs and $($manifest.icons.Count * 3) PNGs: category palette, dimensions, non-empty artwork and transparent background."

@@ -115,3 +115,17 @@ The shared lock only coordinates this Rhino process; external manual changes to 
 project's contents are not all detectable. Do not edit PLAXIS during a read.
 
 No example model files or optimizer integration are distributed. Start the Input server manually; the result reader can open Output for the selected calculated phase.
+
+## Structural plates (0.5.0.0)
+
+PlateData.cs defines immutable, Rhino-independent PlateMaterialData and PlateData.
+PlateComponents.cs creates those definitions and draws the Rhino line preview.
+ModelData owns an optional plate list independently of AnalysisData so geometry-only
+builds remain possible. ModelBuilder creates plate materials/features before meshing;
+AnalysisRunner re-resolves GH_Plate_<ID> staged handles and applies complete phase states.
+
+Plate materials and continuum materials have separate data types; invalid cross-wiring
+is rejected in Grasshopper before contacting PLAXIS. Model fingerprints include all plate
+geometry, material and phase activation inputs. No Python runtime backend is introduced.
+Native commands/properties were checked against the installed PLAXIS 2D 2025.1 command
+reference (PlateMat, plate and platemat); protocol doubles are not native acceptance.

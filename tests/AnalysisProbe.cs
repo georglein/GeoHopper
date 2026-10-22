@@ -70,13 +70,54 @@ internal static class AnalysisProbe
         Reject("Overlapping contacts rejected",()=>new AnalysisData(model.Regions,new[]{a.Interfaces[0],
             new InterfaceData("Other",a.Interfaces[0].Segment,"Base","Wall",Soil(),false,.67)},a.Loads,a.Phases,a.Mesh));
     }
+
+    /// <summary>Synthetic plate fixture with installation and subsequent deactivation; not an engineering demo.</summary>
+    internal static ModelData PlateDemo()
+    {
+        var m=new PlateMaterialData("PlateConcrete",12e9,160e6,.2,9600,true,0);
+        var plates=new[]{new PlateData("Left",new SegmentData(new XY(1,-1),new XY(1,1)),m),
+            new PlateData("Right",new SegmentData(new XY(3,-1),new XY(3,1)),m)};
+        return new ModelData("AnalysisDemo",Demo().Regions,0,null,null,
+            new[]{new PhaseData("Initial","",new[]{"Base","Wall"},null,null,false),
+                new PhaseData("Install","Initial",new[]{"Base","Wall"},null,null,true,new[]{"Left","Right"}),
+                new PhaseData("Remove","Install",new[]{"Base","Wall"},null,null,false,new[]{"Right"})},
+            new MeshData(.5,null,0),plates);
+    }
+    /// <summary>Checks plate invariants, compatibility and stale-result invalidation before any HTTP calls.</summary>
+    private static void PlateCore()
+    {
+        var model=PlateDemo(); var plate=model.Plates[0]; var material=plate.Material;
+        Check("Plate creation uses native plate command",plate.Command()=="plate (1 -1) (1 1)");
+        Check("Plate material uses documented plate properties",material.Command().Contains("\"Isotropic\" True") && material.Command().Contains("\"StructNu\"") && !material.Command().Contains("Eref"));
+        Check("Plate installation and removal are full snapshots",model.Analysis.Phases[0].Plates.Count==0 && model.Analysis.Phases[1].Plates.Count==2 && model.Analysis.Phases[2].Plates.Count==1);
+        Check("Legacy models have no plates",Demo().Plates.Count==0 && Demo().Analysis.Phases.All(p=>p.Plates.Count==0));
+        Reject("Plate rejects continuum material absence",()=>new PlateData("X",plate.Segment,null));
+        Reject("Plate rejects zero EA",()=>new PlateMaterialData("X",0,1,.2,1,true,0));
+        Reject("Plate rejects non-finite EI",()=>new PlateMaterialData("X",1,Double.NaN,.2,1,true,0));
+        Reject("Plate rejects negative weight",()=>new PlateMaterialData("X",1,1,.2,-1,true,0));
+        Reject("Plate rejects invalid Poisson ratio",()=>new PlateMaterialData("X",1,1,.5,1,true,0));
+        Reject("Initial phase cannot activate plates",()=>new PhaseData("Initial","",new[]{"Base"},null,null,false,new[]{"Left"}));
+        Reject("Unknown active plate rejected",()=>new ModelData("X",model.Regions,0,null,null,model.Analysis.Phases,model.Analysis.Mesh));
+        Reject("Duplicate plate IDs rejected",()=>new ModelData("X",model.Regions,0,plates:new[]{plate,plate}));
+        Reject("Overlapping plate geometry rejected",()=>new ModelData("X",model.Regions,0,plates:new[]{plate,new PlateData("Other",plate.Segment,material)}));
+        Reject("Out-of-domain plate rejected",()=>new ModelData("X",model.Regions,0,plates:new[]{new PlateData("Other",new SegmentData(new XY(1,0),new XY(5,0)),material)}));
+        Reject("Conflicting shared plate materials rejected",()=>new ModelData("X",model.Regions,0,plates:new[]{plate,new PlateData("Other",model.Plates[1].Segment,new PlateMaterialData(material.Id,1,1,.2,1,true,0))}));
+        Reject("Continuum and plate material ID collision rejected",()=>new ModelData("X",model.Regions,0,plates:new[]{new PlateData("Other",plate.Segment,new PlateMaterialData("Soil",1,1,.2,1,true,0))}));
+        var geometry=new ModelData("X",model.Regions,0,plates:model.Plates);
+        Check("Geometry-only plates do not force analysis",geometry.Analysis==null && geometry.Plates.Count==2);
+        var changed=new ModelData("X",model.Regions,0,plates:new[]{new PlateData(plate.Id,plate.Segment,new PlateMaterialData("Changed",material.EA*2,material.EI,.2,9600,true,0)),model.Plates[1]});
+        Check("Plate stiffness changes invalidate fingerprint",geometry.Fingerprint!=changed.Fingerprint);
+        var phaseChanged=new PhaseData("Remove","Install",new[]{"Base","Wall"},null,null,false,new[]{"Left"});
+        Check("Plate activation changes invalidate phase signature",model.Analysis.Phases[2].Signature()!=phaseChanged.Signature());
+    }
+
     /// <summary>Runs core assertions or a build/solve sequence against an isolated server.</summary>
     public static int Main(string[] args)
     {
-        if(args.Length==0) { Core(); return 0; }
+        if(args.Length==0) { Core(); PlateCore(); return 0; }
         Console.InputEncoding=new System.Text.UTF8Encoding(false);
         var connection=new ConnectionData("127.0.0.1",Int32.Parse(args[0]),Console.ReadLine());
-        var build=ModelBuilder.BuildAsync(Demo(),connection,args[1],s=>{}).GetAwaiter().GetResult();
+        var build=ModelBuilder.BuildAsync(args[2]=="plates"?PlateDemo():Demo(),connection,args[1],s=>{}).GetAwaiter().GetResult();
         CalculationResult calc=null;
         if(build.Success && build.Receipt!=null)
         {

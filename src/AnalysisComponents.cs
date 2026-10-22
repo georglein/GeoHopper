@@ -102,6 +102,7 @@ namespace GeoHopper
             p.AddTextParameter("Active interfaces","Interfaces","Full list of active contact IDs",GH_ParamAccess.list); p[3].Optional=true;
             p.AddTextParameter("Active loads","Loads","Full list of active load IDs",GH_ParamAccess.list); p[4].Optional=true;
             p.AddBooleanParameter("Reset displacements","Reset","Reset at this phase start; normally true only just after gravity initialization",GH_ParamAccess.item,false);
+            p.AddTextParameter("Active plates","Plates","Full list of active plate IDs; empty means all plates inactive",GH_ParamAccess.list); p[6].Optional=true;
         }
         /// <inheritdoc/>
         protected override void RegisterOutputParams(GH_OutputParamManager p)
@@ -113,7 +114,8 @@ namespace GeoHopper
                 string id="",parent=""; bool reset=false; var regions=new List<string>(); var contacts=new List<string>(); var loads=new List<string>();
                 if(!d.GetData(0,ref id)||!d.GetDataList(2,regions)||!d.GetData(5,ref reset)) return;
                 d.GetData(1,ref parent); d.GetDataList(3,contacts); d.GetDataList(4,loads);
-                var phase=new PhaseData(id,parent,regions,contacts,loads,reset);
+                var plates=new List<string>(); d.GetDataList(6,plates);
+                var phase=new PhaseData(id,parent,regions,contacts,loads,reset,plates);
                 d.SetData(0,new DefinitionGoo<PhaseData>(phase)); d.SetData(1,phase.Id);
             } catch(Exception ex) { Report(ex); }
         }

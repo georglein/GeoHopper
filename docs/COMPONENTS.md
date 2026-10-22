@@ -1,5 +1,9 @@
 # Component catalogue
 
+Version 0.5.0.0 adds Plate Material and Plate. Model appends optional Plates (input 8);
+Phase appends optional Active plates (input 7). All existing GUIDs, ports and outputs
+retain their order. New plate transfer and GH document compatibility require live acceptance.
+
 Version 0.4.0.1 adds the supplied component icons. They are embedded in the plugin;
 no external graphics folder is required at runtime. GUIDs, ports and categories are unchanged.
 
@@ -125,6 +129,7 @@ Category: Model. Nickname: Model.
 | Loads | optional | Flattened Line Load definitions |
 | Phases | optional | Flattened Phase definitions |
 | Mesh | optional | Mesh Settings definition |
+| Plates | optional | Flattened Plate definitions; geometry-only builds are allowed |
 
 The last four ports are appended in 0.3.0.0. With all disconnected, WP1 behavior remains.
 Any analysis input requires Mesh Settings and 2 to 30 phases. Analysis phases must have
@@ -215,7 +220,7 @@ Category: Geometry. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed06.
 Output: Interface. The segment must lie on one straight boundary edge of both regions.
 Overlapping contact segments are rejected. Region A/B do not determine the interface side.
 Inspect the native side markers: coincident geometry may retain an existing line direction.
-A custom contact material copies the supplied soil properties, sets InterfaceStrengthMethod
+A custom contact material copies the supplied soil properties, sets InterfaceStrengthDetermination
 to Manual, Rinter to the input, TensionCutOff=True, TensileStrength=0 and GapClosure=True.
 Its source soil is unchanged. This release does not model hydraulic contact properties.
 
@@ -249,10 +254,11 @@ Category: Analysis. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed08.
 | Active interfaces | Optional full list of active contact IDs |
 | Active loads | Optional full list of active load IDs |
 | Reset displacements | False; explicitly resets at the start of a non-initial phase |
+| Active plates | Optional full list of plate IDs; omitted plates are inactive |
 
 Outputs: Phase and ID. Use the ID output as a later phase's Parent.
 Lists are complete snapshots; omitted objects are inactive. They are not incremental lists.
-The initial phase permits no contacts, loads or displacement reset. It uses Gravity loading;
+The initial phase permits no contacts, loads, plates or displacement reset. It uses Gravity loading;
 all later phases use Plastic. Active contacts require both adjacent regions.
 Every phase has dry soil conditions and standard plane-strain supports (bottom fixed in
 both directions; vertical sides fixed horizontally; top free). Margin must be zero.
@@ -386,3 +392,54 @@ Interactive WP3 acceptance, mesh/domain checks and result interpretation precede
 optimizer synchronization and additional structural primitives.
 
 Stable library GUID: e3f53ab2-26c7-47ed-ae5c-315c4ea5830c.
+
+## Plate Material
+
+Category: Materials. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed15.
+
+| Input | Default | Meaning |
+|---|---|---|
+| ID | WallPlateMaterial | Stable plate material ID; distinct from continuum/contact material IDs |
+| EA [N/m] | 12000000000 | Positive axial stiffness per metre out of plane |
+| EI [N m2/m] | 160000000 | Positive bending stiffness per metre out of plane |
+| Poisson ratio | 0.2 | Dimensionless, 0 to 0.499 |
+| Weight [N/m/m] | 9600 | Nonnegative weight per plate length per out-of-plane metre |
+| Prevent punching | True | Explicit native PLAXIS option; assess its suitability |
+| Colour | Grey-blue | Rhino preview only |
+
+Output: Plate material. This is an isotropic elastic `PlateMat`, not a `SoilMat`.
+The adapter uses MaterialType=Elastic, Isotropic=True, EA1, EI, StructNu, w and
+PreventPunching. EA2 and the equivalent thickness are not independently assigned.
+Defaults represent a simple 0.4 m rectangular section with E=30 GPa and gamma=24 kN/m3;
+they are illustrative, not a validated design. No strength, orthotropy, prestress or
+plastic capacity is exposed. Shared IDs require identical definitions including colour.
+
+## Plate
+
+Category: Structures. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed16.
+
+| Input | Meaning |
+|---|---|
+| ID | Unique plate ID, default WallPlate |
+| Line | One open straight line in World XY, Z=0, in Rhino document units |
+| Plate material | Plate Material output; continuum materials are rejected |
+
+Outputs: Plate, ID (for Phase Active plates), Length [m]. The line preview uses the
+material colour; selection uses green. Hide the upstream line preview if it overlaps.
+The line is a structural reference line, not a rendered thickness or concrete volume.
+
+Connect all plates as a flattened list to Model.Plates. Up to 100 plates are supported.
+IDs are case-insensitively unique. Collinear overlap is rejected; meeting endpoints and
+crossing lines are allowed, subject to native meshing. Endpoints must be within the
+model contour. This bounds check does not prove soil support or structural stability.
+A plate does not remove soil, cut a concrete volume out of the region, create an
+interface, or establish a hydraulic boundary. Interfaces for plates are a later package.
+
+Build creates each shared plate material once, assigns each returned Plate object,
+and names it GH_Plate_<ID>. After meshing it resolves staged handles by these names.
+Every phase first deactivates all plates and then activates exactly its Active plates.
+Install plates in a non-initial phase. Existing phases with no plate input keep all
+plates inactive. Existing Read Results/Material Quantity still address continuum regions,
+not plate displacements, stiffness-based volumes or structural forces.
+
+See [the WP1 acceptance guide](WP1-PLATES-TEST.md) before using the new workflow.

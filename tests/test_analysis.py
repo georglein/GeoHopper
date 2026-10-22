@@ -67,13 +67,13 @@ class Handler(BaseHTTPRequestHandler):
             if verb == "gotostages":
                 # Geometry feature GUIDs are replaced by staged SourceFeature handles.
                 state["staged"] = {name: str(uuid.uuid4()) for name in state["names"].values()
-                                   if name.startswith(("GH_R_", "GH_I_", "GH_L_"))}
+                                   if name.startswith(("GH_R_", "GH_I_", "GH_L_", "GH_Plate_"))}
             if verb == "save" and cmd != "save":
                 state["file"] = cmd[len("save "):].strip('"')
             if verb == "rename":
                 _, guid, name = cmd.split(" ", 2)
                 state["names"][guid] = name.strip('"')
-            types = {"soilmat": ["SoilMat"], "polygon": ["Polygon", "Soil"],
+            types = {"platemat": ["PlateMat"], "plate": ["Line", "Plate"], "soilmat": ["SoilMat"], "polygon": ["Polygon", "Soil"],
                      "posinterface": ["Line", "PositiveInterface"],
                      "neginterface": ["Line", "NegativeInterface"],
                      "lineload": ["Line", "LineLoad"], "phase": ["Phase"]}
@@ -143,6 +143,20 @@ if __name__ == "__main__":
             calculated = [state["names"][c.split()[1]] for c in commands if c.startswith("calculate ")]
             check("Solver invoked in parent-first order", calculated == ["GH_Phase_Initial", "GH_Phase_Install", "GH_Phase_Load"])
             check("Output opens only after final save", commands[-2] == "save" and commands[-1].startswith("view "))
+            r = run(server.server_port, folder, mode="plates")
+            check("Plate build and staged solve succeed", r["BuildSuccess"] and r["Success"])
+            check("Shared plate material created once", sum(c.startswith("platemat ") for c in commands) == 1)
+            check("Two plates created before meshing", sum(c.startswith("plate ") for c in commands) == 2 and max(i for i,c in enumerate(commands) if c.startswith("plate ")) < commands.index("gotomesh"))
+            plate_geometry = {g for g,n in state["names"].items() if n.startswith("GH_Plate_")}
+            check("Both plates receive material", sum(c.startswith("setmaterial ") and c.split()[1] in plate_geometry for c in commands) == 2)
+            plate_handles = {g for n,g in state["staged"].items() if n.startswith("GH_Plate_")}
+            check("Every phase explicitly deactivates both staged plates", sum(c.startswith("deactivate ") and c.split()[1] in plate_handles for c in commands) == 6)
+            active = [(c.split()[1], state["names"][c.split()[2]]) for c in commands if c.startswith("activate ") and c.split()[1] in plate_handles]
+            check("No initial plates; installation activates two; removal retains right", active == [(state["staged"]["GH_Plate_Left"], "GH_Phase_Install"), (state["staged"]["GH_Plate_Right"], "GH_Phase_Install"), (state["staged"]["GH_Plate_Right"], "GH_Phase_Remove")])
+            r = run(server.server_port, folder, mode="plates", fail_command="platemat")
+            check("Plate material failure stops before meshing", not r["BuildSuccess"] and not any(c.startswith("meshd ") for c in commands))
+            r = run(server.server_port, folder, mode="plates", fail_command="plate")
+            check("Plate creation failure yields no receipt", not r["BuildSuccess"] and not r["HasReceipt"])
             r = run(server.server_port, folder, fail_phase="GH_Phase_Install")
             check("Native failed phase stops descendants", not r["Success"] and "Controlled convergence failure" in r["Error"] and sum(c.startswith("calculate ") for c in commands) == 2)
             check("Failure retains per-phase status", len(r["Status"]) == 2 and "FAILED" in r["Status"][-1])

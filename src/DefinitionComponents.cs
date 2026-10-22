@@ -230,6 +230,7 @@ namespace GeoHopper
             p.AddGenericParameter("Loads","Loads","Optional line load definitions; flatten this input",GH_ParamAccess.list); p[4].Optional=true;
             p.AddGenericParameter("Phases","Phases","Full phase activation snapshots; requires Mesh Settings",GH_ParamAccess.list); p[5].Optional=true;
             p.AddGenericParameter("Mesh","Mesh","Optional Mesh Settings; requires at least two phases",GH_ParamAccess.item); p[6].Optional=true;
+            p.AddGenericParameter("Plates","Plates","Optional straight structural plates; flatten this input",GH_ParamAccess.list); p[7].Optional=true;
         }
         /// <inheritdoc/>
         protected override void RegisterOutputParams(GH_OutputParamManager p)
@@ -246,8 +247,9 @@ namespace GeoHopper
                 if(!data.GetData(0,ref id)||!data.GetDataList(1,raw)||!data.GetData(2,ref margin)) return;
                 var contacts=new List<object>(); var loads=new List<object>(); var phases=new List<object>(); object mesh=null;
                 data.GetDataList(3,contacts); data.GetDataList(4,loads); data.GetDataList(5,phases); data.GetData(6,ref mesh);
+                var plates=new List<object>(); data.GetDataList(7,plates);
                 var model=new ModelData(id,raw.Select(Unwrap<RegionData>),margin,contacts.Select(Unwrap<InterfaceData>),
-                    loads.Select(Unwrap<LoadData>),phases.Select(Unwrap<PhaseData>),mesh==null?null:Unwrap<MeshData>(mesh));
+                    loads.Select(Unwrap<LoadData>),phases.Select(Unwrap<PhaseData>),mesh==null?null:Unwrap<MeshData>(mesh),plates.Select(Unwrap<PlateData>));
                 data.SetData(0,new DefinitionGoo<ModelData>(model));
                 data.SetData(1,model+"\nTarget project Title: "+ModelBuilder.Marker(model)+"\nSI: m, N, s. "+
                     (model.Analysis==null?"Geometry/materials only.":model.Analysis.Phases.Count+" dry phases; Build prepares mesh/phases, Calculate runs analysis."));

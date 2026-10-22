@@ -29,6 +29,10 @@
     "Results": {
       "accent": "#8059B1",
       "tint": "#EEE6F7"
+    },
+    "Structures": {
+      "accent": "#4D667D",
+      "tint": "#E5EBF0"
     }
   },
   "icons": [
@@ -211,6 +215,30 @@
       "png24": "png/24/material-quantity.png",
       "png48": "png/48/material-quantity.png",
       "png96": "png/96/material-quantity.png"
+    },
+    {
+      "id": "plate-material",
+      "title": "Plate Material",
+      "componentClass": "PlateMaterialComponent",
+      "category": "Material",
+      "pluginCategory": "Materials",
+      "meaning": "Elastic plate section stiffness",
+      "svg": "svg/plate-material.svg",
+      "png24": "png/24/plate-material.png",
+      "png48": "png/48/plate-material.png",
+      "png96": "png/96/plate-material.png"
+    },
+    {
+      "id": "plate",
+      "title": "Plate",
+      "componentClass": "PlateComponent",
+      "category": "Structures",
+      "pluginCategory": "Structures",
+      "meaning": "Straight structural plate",
+      "svg": "svg/plate.svg",
+      "png24": "png/24/plate.png",
+      "png48": "png/48/plate.png",
+      "png96": "png/96/plate.png"
     }
   ]
 }

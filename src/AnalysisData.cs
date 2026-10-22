@@ -14,7 +14,7 @@ namespace GeoHopper
         {
             foreach(var p in new[]{a,b}) { Rules.Range(p.X,-1e6,1e6,"X [m]"); Rules.Range(p.Y,-1e6,1e6,"Y [m]"); }
             if(Math.Sqrt((a.X-b.X)*(a.X-b.X)+(a.Y-b.Y)*(a.Y-b.Y))<=Rules.Tolerance)
-                throw new ArgumentException("A load or interface needs a nonzero straight segment.");
+                throw new ArgumentException("A line feature needs a nonzero straight segment.");
             A=a; B=b;
         }
         /// <summary>Returns command-safe coordinate pairs.</summary>
@@ -104,16 +104,16 @@ namespace GeoHopper
     internal sealed class PhaseData
     {
         internal readonly string Id,Parent;
-        internal readonly ReadOnlyCollection<string> Regions,Interfaces,Loads;
+        internal readonly ReadOnlyCollection<string> Regions,Interfaces,Loads,Plates;
         internal readonly bool ResetDisplacements;
         /// <summary>Validates identifiers and copies lists so later GH solutions cannot mutate running jobs.</summary>
-        internal PhaseData(string id,string parent,IEnumerable<string> regions,IEnumerable<string> interfaces,IEnumerable<string> loads,bool reset)
+        internal PhaseData(string id,string parent,IEnumerable<string> regions,IEnumerable<string> interfaces,IEnumerable<string> loads,bool reset,IEnumerable<string> plates=null)
         {
             Id=Rules.Id(id); Parent=String.IsNullOrWhiteSpace(parent)?"":Rules.Id(parent.Trim());
-            Regions=Ids(regions); Interfaces=Ids(interfaces); Loads=Ids(loads); ResetDisplacements=reset;
+            Regions=Ids(regions); Interfaces=Ids(interfaces); Loads=Ids(loads); Plates=Ids(plates); ResetDisplacements=reset;
             if(Regions.Count==0) throw new ArgumentException("Each phase needs at least one active region.");
-            if(Parent=="" && (reset || Interfaces.Count>0 || Loads.Count>0))
-                throw new ArgumentException("The initial gravity phase must not reset displacements or activate contacts/loads.");
+            if(Parent=="" && (reset || Interfaces.Count>0 || Loads.Count>0 || Plates.Count>0))
+                throw new ArgumentException("The initial gravity phase must not reset displacements or activate contacts/loads/plates.");
         }
         /// <summary>Normalizes an optional list, rejecting duplicates and unsafe identifiers.</summary>
         internal static ReadOnlyCollection<string> Ids(IEnumerable<string> values)
@@ -123,7 +123,7 @@ namespace GeoHopper
             return list.AsReadOnly();
         }
         /// <summary>Captures the complete activation state, rather than only changes from a parent.</summary>
-        internal string Signature() { return Id+"|"+Parent+"|"+String.Join(",",Regions)+"|"+String.Join(",",Interfaces)+"|"+String.Join(",",Loads)+"|"+ResetDisplacements; }
+        internal string Signature() { return Id+"|"+Parent+"|"+String.Join(",",Regions)+"|"+String.Join(",",Interfaces)+"|"+String.Join(",",Loads)+"|"+ResetDisplacements+"|"+String.Join(",",Plates); }
         /// <inheritdoc/>
         public override string ToString() { return Id+" | "+(Parent==""?"Initial gravity loading":"Plastic, parent "+Parent); }
     }
@@ -156,7 +156,7 @@ namespace GeoHopper
         internal readonly MeshData Mesh;
         /// <summary>Rejects invalid references, duplicate features, phase cycles and contacts without both active regions.</summary>
         internal AnalysisData(IList<RegionData> regions,IEnumerable<InterfaceData> interfaces,IEnumerable<LoadData> loads,
-            IEnumerable<PhaseData> phases,MeshData mesh)
+            IEnumerable<PhaseData> phases,MeshData mesh,IEnumerable<PlateData> plates=null)
         {
             if(mesh==null) throw new ArgumentException("Analysis requires Mesh Settings.");
             Mesh=mesh;
@@ -183,10 +183,13 @@ namespace GeoHopper
                 if(lds[i].Segment.Overlaps(lds[j].Segment)) throw new ArgumentException("Load segments overlap; combine their components.");
             var im=ints.ToDictionary(x=>x.Id,StringComparer.OrdinalIgnoreCase);
             var lm=lds.ToDictionary(x=>x.Id,StringComparer.OrdinalIgnoreCase);
+            var plateIds=new HashSet<string>((plates??Enumerable.Empty<PlateData>()).Select(p=>p.Id),StringComparer.OrdinalIgnoreCase);
             var pm=phs.ToDictionary(x=>x.Id,StringComparer.OrdinalIgnoreCase);
             foreach(var p in phs)
             {
                 foreach(var id in p.Regions) Require(reg,id,"active region");
+                foreach(var id in p.Plates)
+                    if(!plateIds.Contains(id)) throw new ArgumentException("Unknown active plate: "+id);
                 if(p.Parent!="") Require(pm,p.Parent,"parent phase");
                 foreach(var id in p.Interfaces)
                 {

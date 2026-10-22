@@ -67,3 +67,20 @@ gamma=24 kN/m3. A display-unit change is not a change in material stiffness.
 The user confirmed the WP1 geometry/material checks after correcting Rhino units and
 recomputing GH. The user subsequently accepted WP2 Build/Calculate. WP3 point readings
 were verified via C# against the existing Output model; GH wiring acceptance remains pending.
+
+## Plate section inputs (0.5.0.0)
+
+Plate geometry follows Rhino document units; Plate.Length is always metres.
+Plate Material physical values are SI regardless of Rhino units:
+
+- EA: N/m out of plane.
+- EI: N m2/m out of plane (dimensionally N m).
+- w: N/m/m, weight per plate length per out-of-plane metre (dimensionally N/m2).
+- Poisson ratio: dimensionless.
+
+For a homogeneous rectangular section of thickness t per metre out of plane, the
+simple section inputs are EA=E*t, EI=E*t^3/12, and w=gamma*t. Do not enter E in the
+EA input or volumetric gamma in w. These conversions do not establish cracked concrete
+stiffness, reinforcement effects, strength or an appropriate constitutive assumption.
+The isotropic defaults E=30e9 Pa, t=0.4 m, gamma=24000 N/m3 give EA=12e9 N/m,
+EI=160e6 N m2/m, w=9600 N/m/m. PLAXIS receives these values in its m/N/s project units.

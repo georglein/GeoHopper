@@ -128,11 +128,12 @@ namespace GeoHopper
         internal readonly ReadOnlyCollection<RegionData> Regions;
         internal readonly ReadOnlyCollection<MaterialData> Materials;
         internal readonly AnalysisData Analysis;
+        internal readonly ReadOnlyCollection<PlateData> Plates;
         internal readonly double MinX, MinY, MaxX, MaxY;
         /// <summary>Checks IDs, material consistency, polygon overlap and automatic model extents.</summary>
         internal ModelData(string id, IEnumerable<RegionData> regions, double margin,
             IEnumerable<InterfaceData> interfaces=null, IEnumerable<LoadData> loads=null,
-            IEnumerable<PhaseData> phases=null, MeshData mesh=null)
+            IEnumerable<PhaseData> phases=null, MeshData mesh=null, IEnumerable<PlateData> plates=null)
         {
             Id = Rules.Id(id); Rules.Range(margin, 0, 1e5, "Model margin [m]");
             var list = regions.ToList();
@@ -158,21 +159,28 @@ namespace GeoHopper
             MinY = list.Min(r => r.Points.Min(p => p.Y)) - margin;
             MaxX = list.Max(r => r.Points.Max(p => p.X)) + margin;
             MaxY = list.Max(r => r.Points.Max(p => p.Y)) + margin;
+            var plateList=(plates??Enumerable.Empty<PlateData>()).ToList();
+            PlateData.Validate(plateList,MinX,MinY,MaxX,MaxY);
+            Plates=plateList.AsReadOnly();
+            if(plateList.Any(p=>materials.Any(m=>String.Equals(m.Id,p.Material.Id,StringComparison.OrdinalIgnoreCase))))
+                throw new ArgumentException("Use distinct IDs for continuum materials and plate materials.");
             var contacts=(interfaces??Enumerable.Empty<InterfaceData>()).ToList();
+            if(contacts.Any(c=>plateList.Any(p=>String.Equals(p.Material.Id,"GH_Contact_"+c.Id,StringComparison.OrdinalIgnoreCase))))
+                throw new ArgumentException("Plate material ID conflicts with an automatically generated contact material name.");
             var forces=(loads??Enumerable.Empty<LoadData>()).ToList();
             var stages=(phases??Enumerable.Empty<PhaseData>()).ToList();
             if(mesh!=null || contacts.Count>0 || forces.Count>0 || stages.Count>0)
             {
                 if(margin!=0) throw new ArgumentException("Analysis currently requires Margin=0 so the model boundaries coincide with the region bounds.");
-                Analysis=new AnalysisData(Regions,contacts,forces,stages,mesh);
+                Analysis=new AnalysisData(Regions,contacts,forces,stages,mesh,Plates);
                 if(contacts.Any(c=>materials.Any(m=>String.Equals(m.Id,"GH_Contact_"+c.Id,StringComparison.OrdinalIgnoreCase))))
                     throw new ArgumentException("Material ID conflicts with an automatically generated GH_Contact_ name.");
             }
             Fingerprint = Rules.Hash(Id + "|" + Rules.N(margin) + "|" + String.Join("|", list.Select(r => r.Signature()))+
-                (Analysis==null?"":"|"+Analysis.Signature()));
+                (Analysis==null?"":"|"+Analysis.Signature())+"|"+String.Join("|",Plates.Select(p=>p.Signature())));
         }
         /// <summary>Describes this immutable model without serializing a PLAXIS session.</summary>
-        public override string ToString() { return Id + " | " + Regions.Count + " regions | " + Materials.Count + " materials"; }
+        public override string ToString() { return Id + " | " + Regions.Count + " regions | " + Materials.Count + " continuum materials | " + Plates.Count + " plates"; }
     }
 }
 

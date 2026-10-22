@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0.0 - Excavation WP1: plates (live acceptance pending)
+
+- Add Plate Material and Plate, with isotropic elastic SI properties and line preview.
+- Append optional Model.Plates and Phase.Active plates without changing existing GUIDs/ports.
+- Create and deduplicate plate materials, assign native plate objects and resolve staged
+  plate handles after meshing. Apply complete plate activation snapshots in every phase.
+- Reject invalid stiffness, conflicting IDs/materials, overlapping plates and out-of-domain lines.
+- Add plate core/transfer regression tests, two icons and an interactive acceptance guide.
+- No plate interfaces, excavation-specific changes, anchors or plate result extraction yet.
+- Live Grasshopper/PLAXIS transfer and old-document compatibility are pending user acceptance.
+
 ## 0.4.0.1 - Component icons
 
 - Embed the supplied transparent 24-pixel icons for all 15 components.
