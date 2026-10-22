@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.gha binary
+*.dll binary
+*.exe binary
+*.gh binary
+*.3dm binary
+*.nupkg binary

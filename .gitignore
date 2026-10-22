@@ -1,0 +1,28 @@
+# Build outputs, dependency caches and local settings.
+artifacts/
+dist/
+lib/*.dll
+lib/*.nupkg
+tests/*.dll
+tests/*.exe
+**/__pycache__/
+*.pyc
+*.user
+*.suo
+.vs/
+.env
+.env.*
+*.log
+# Private models and saved Grasshopper definitions are not public examples yet.
+Runs/
+runs/
+*.gh
+*.ghx
+*.3dm
+*.3dmbak
+*.p2dx*
+*.p3d*
+*.p2d*
+*.p3dx*
+*.zip
+# Future reviewed examples can be allowed explicitly by the maintainer.

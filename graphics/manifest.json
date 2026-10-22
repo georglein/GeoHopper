@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "ink": "#263D46",
+  "palette": {
+    "Analysis": {
+      "accent": "#3977BA",
+      "tint": "#E4EDF8"
+    },
+    "Connection": {
+      "accent": "#178BA4",
+      "tint": "#E0F1F5"
+    },
+    "Geometry": {
+      "accent": "#168579",
+      "tint": "#D1ECE5"
+    },
+    "Loads": {
+      "accent": "#C87820",
+      "tint": "#FAECD9"
+    },
+    "Material": {
+      "accent": "#A06439",
+      "tint": "#F1E6DB"
+    },
+    "Model": {
+      "accent": "#B64C78",
+      "tint": "#F6E2EB"
+    },
+    "Results": {
+      "accent": "#8059B1",
+      "tint": "#EEE6F7"
+    }
+  },
+  "icons": [
+    {
+      "id": "phase",
+      "title": "Phase",
+      "componentClass": "PhaseComponent",
+      "category": "Analysis",
+      "pluginCategory": "Analysis",
+      "meaning": "Connected construction stages",
+      "svg": "svg/phase.svg",
+      "png24": "png/24/phase.png",
+      "png48": "png/48/phase.png",
+      "png96": "png/96/phase.png"
+    },
+    {
+      "id": "mesh-settings",
+      "title": "Mesh Settings",
+      "componentClass": "MeshSettingsComponent",
+      "category": "Analysis",
+      "pluginCategory": "Analysis",
+      "meaning": "Triangular mesh with local refinement",
+      "svg": "svg/mesh-settings.svg",
+      "png24": "png/24/mesh-settings.png",
+      "png48": "png/48/mesh-settings.png",
+      "png96": "png/96/mesh-settings.png"
+    },
+    {
+      "id": "calculate",
+      "title": "Calculate",
+      "componentClass": "CalculateComponent",
+      "category": "Analysis",
+      "pluginCategory": "Analysis",
+      "meaning": "Run the prepared analysis",
+      "svg": "svg/calculate.svg",
+      "png24": "png/24/calculate.png",
+      "png48": "png/48/calculate.png",
+      "png96": "png/96/calculate.png"
+    },
+    {
+      "id": "connection",
+      "title": "GeoHopper Connection",
+      "componentClass": "ConnectionComponent",
+      "category": "Connection",
+      "pluginCategory": "Connection",
+      "meaning": "Linked connector pair",
+      "svg": "svg/connection.svg",
+      "png24": "png/24/connection.png",
+      "png48": "png/48/connection.png",
+      "png96": "png/96/connection.png"
+    },
+    {
+      "id": "region",
+      "title": "Region",
+      "componentClass": "RegionComponent",
+      "category": "Geometry",
+      "pluginCategory": "Geometry",
+      "meaning": "Closed area and vertices",
+      "svg": "svg/region.svg",
+      "png24": "png/24/region.png",
+      "png48": "png/48/region.png",
+      "png96": "png/96/region.png"
+    },
+    {
+      "id": "interface",
+      "title": "Interface",
+      "componentClass": "InterfaceComponent",
+      "category": "Geometry",
+      "pluginCategory": "Geometry",
+      "meaning": "Contact between adjacent regions",
+      "svg": "svg/interface.svg",
+      "png24": "png/24/interface.png",
+      "png48": "png/48/interface.png",
+      "png96": "png/96/interface.png"
+    },
+    {
+      "id": "line-load",
+      "title": "Line Load",
+      "componentClass": "LineLoadComponent",
+      "category": "Loads",
+      "pluginCategory": "Loads",
+      "meaning": "Uniform load acting on a boundary",
+      "svg": "svg/line-load.svg",
+      "png24": "png/24/line-load.png",
+      "png48": "png/48/line-load.png",
+      "png96": "png/96/line-load.png"
+    },
+    {
+      "id": "material-linear-elastic",
+      "title": "Material - Linear Elastic",
+      "componentClass": "ElasticMaterialComponent",
+      "category": "Material",
+      "pluginCategory": "Materials",
+      "meaning": "Elastic material represented by a spring",
+      "svg": "svg/material-linear-elastic.svg",
+      "png24": "png/24/material-linear-elastic.png",
+      "png48": "png/48/material-linear-elastic.png",
+      "png96": "png/96/material-linear-elastic.png"
+    },
+    {
+      "id": "material-mohr-coulomb",
+      "title": "Material - Mohr-Coulomb",
+      "componentClass": "MohrCoulombMaterialComponent",
+      "category": "Material",
+      "pluginCategory": "Materials",
+      "meaning": "Granular material and a shear plane",
+      "svg": "svg/material-mohr-coulomb.svg",
+      "png24": "png/24/material-mohr-coulomb.png",
+      "png48": "png/48/material-mohr-coulomb.png",
+      "png96": "png/96/material-mohr-coulomb.png"
+    },
+    {
+      "id": "model",
+      "title": "Model",
+      "componentClass": "ModelComponent",
+      "category": "Model",
+      "pluginCategory": "Model",
+      "meaning": "Several regions collected in one domain",
+      "svg": "svg/model.svg",
+      "png24": "png/24/model.png",
+      "png48": "png/48/model.png",
+      "png96": "png/96/model.png"
+    },
+    {
+      "id": "build-model",
+      "title": "Build Model",
+      "componentClass": "BuildComponent",
+      "category": "Model",
+      "pluginCategory": "Model",
+      "meaning": "Model transferred into the target",
+      "svg": "svg/build-model.svg",
+      "png24": "png/24/build-model.png",
+      "png48": "png/48/build-model.png",
+      "png96": "png/96/build-model.png"
+    },
+    {
+      "id": "result-point",
+      "title": "Result Point",
+      "componentClass": "ResultPointComponent",
+      "category": "Results",
+      "pluginCategory": "Results",
+      "meaning": "An interior sampling location",
+      "svg": "svg/result-point.svg",
+      "png24": "png/24/result-point.png",
+      "png48": "png/48/result-point.png",
+      "png96": "png/96/result-point.png"
+    },
+    {
+      "id": "read-results",
+      "title": "Read Results",
+      "componentClass": "ReadResultsComponent",
+      "category": "Results",
+      "pluginCategory": "Results",
+      "meaning": "Read displacement data from a result sheet",
+      "svg": "svg/read-results.svg",
+      "png24": "png/24/read-results.png",
+      "png48": "png/48/read-results.png",
+      "png96": "png/96/read-results.png"
+    },
+    {
+      "id": "chord-rotation",
+      "title": "Chord Rotation",
+      "componentClass": "ChordRotationComponent",
+      "category": "Results",
+      "pluginCategory": "Results",
+      "meaning": "Angle change between two chords",
+      "svg": "svg/chord-rotation.svg",
+      "png24": "png/24/chord-rotation.png",
+      "png48": "png/48/chord-rotation.png",
+      "png96": "png/96/chord-rotation.png"
+    },
+    {
+      "id": "material-quantity",
+      "title": "Material Quantity",
+      "componentClass": "MaterialQuantityComponent",
+      "category": "Results",
+      "pluginCategory": "Results",
+      "meaning": "Extruded section with a dimension line",
+      "svg": "svg/material-quantity.svg",
+      "png24": "png/24/material-quantity.png",
+      "png48": "png/48/material-quantity.png",
+      "png96": "png/96/material-quantity.png"
+    }
+  ]
+}
