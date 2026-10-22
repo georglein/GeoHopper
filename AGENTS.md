@@ -24,3 +24,7 @@
 - If the working tree is already clean, use the existing HEAD commit as the checkpoint; do not create an empty commit. Report the checkpoint commit ID when starting the work package.
 - A checkpoint preserves the current state; it does not imply that the state has passed tests. Record known incomplete work or failures honestly in the commit description or handoff.
 - Checkpoint commits are local. Do not automatically push to GitHub, publish a release or change the installed plugin as part of this checkpoint rule.
+
+## Component icons
+
+- Every new component must receive an icon following the existing graphics schema: 24 by 24 SVG viewBox, shared outline style, one category accent/tint, and transparent PNG exports at 24, 48 and 96 pixels. Register the component class in graphics/manifest.json and validate/embed the 24-pixel icon during build. Preserve existing icons and do not regenerate an overview graphic.
