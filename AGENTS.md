@@ -16,3 +16,11 @@
 - This directory is the standalone repository root. Do not work in the archived OneDrive checkout.
 - Example files are withheld for now. Keep placeholder folders only until the maintainer explicitly approves an example.
 - Source and project graphics use MIT; retain third-party notices and never redistribute vendor libraries.
+
+## Work-package checkpoints
+
+- Before starting each new work package, inspect Git status and the relevant diff. Commit pending project changes as a checkpoint before making new implementation changes; the maintainer has authorized these local checkpoint commits without asking again.
+- Stage files explicitly after review. Never include credentials, private models, generated outputs or unrelated changes in a checkpoint. Do not overwrite or discard existing work.
+- If the working tree is already clean, use the existing HEAD commit as the checkpoint; do not create an empty commit. Report the checkpoint commit ID when starting the work package.
+- A checkpoint preserves the current state; it does not imply that the state has passed tests. Record known incomplete work or failures honestly in the commit description or handoff.
+- Checkpoint commits are local. Do not automatically push to GitHub, publish a release or change the installed plugin as part of this checkpoint rule.
