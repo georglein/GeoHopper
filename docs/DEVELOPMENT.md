@@ -8,6 +8,27 @@ The conventional Components Folder is for installed releases, not source develop
 
 Register the absolute dist path of your own checkout. Do not add a second copy of the plugin.
 
+## Private interactive test projects
+
+Keep plugin development in the standalone GeoHopper checkout. Store private Rhino,
+Grasshopper and PLAXIS files in a separate workspace outside that repository, for example:
+
+- C:\Dev\GeoHopper: source, documentation, automated tests and the loaded dist release.
+- C:\GeoHopper-Work\WallDemo\Grasshopper: private GH definitions and Rhino geometry.
+- C:\GeoHopper-Work\WallDemo\PLAXIS: generated models, calculation data and run backups.
+
+These are example locations, not folders automatically created or moved by the plugin.
+Set Build Model's Folder input to the intended private PLAXIS directory. Existing GH
+panels keep their saved paths; relocating source code does not update those panels.
+
+Develop a focused change in a branch, run build.ps1, then save/close Rhino and publish
+through publish.ps1. Reopen Rhino, test with the private GH definition, and commit the
+validated source changes. Push to GitHub deliberately when ready. Keep the old source
+checkout as an archive rather than a second active development location.
+
+Automated test code and synthetic fixtures belong in tests/ and remain versioned.
+User demo files are withheld; add reviewed, credential-free examples only when ready.
+
 ## Build
 
 Run .\build.ps1. It:

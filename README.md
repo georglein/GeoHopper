@@ -1,5 +1,9 @@
 # GeoHopper
 
+<p align="center">
+  <img src="docs/images/GeoHopper.png" alt="GeoHopper logo" width="420">
+</p>
+
 **Parametric geotechnical modelling in Grasshopper, analysed with PLAXIS 2D.**
 
 GeoHopper is an early-stage C# plugin for Rhino 7 / Grasshopper. Define geometry,
