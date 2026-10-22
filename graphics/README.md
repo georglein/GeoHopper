@@ -9,9 +9,8 @@ Dark outlines and white details are shared neutral colours.
 - `svg/`: 15 editable vector originals, each with a 24 by 24 viewBox.
 - `png/24/`: transparent 24 by 24 PNGs for the Grasshopper Icon bitmap property.
 - `png/48/` and `png/96/`: larger transparent exports for previews and other uses.
-- `overview.png`: all components grouped by category, with enlarged and actual-size samples.
 - `manifest.json`: component class, category, palette and file mapping.
-- `render.ps1`: rebuilds PNG exports and overview from the SVG originals.
+- `render.ps1`: rebuilds PNG exports from the SVG originals.
 
 ## Category colours
 
@@ -46,5 +45,3 @@ The larger files are supplementary; the locally installed Grasshopper API docume
 - Model shows several regions inside a domain; Build Model adds a transfer action.
 - Chord Rotation compares chord directions schematically; the shared drawing point does not imply a fixed physical pivot.
 - Material Quantity depicts an extruded section, matching section area and volume output.
-
-The overview is a graphics review sheet, not a screenshot of the running plugin.
