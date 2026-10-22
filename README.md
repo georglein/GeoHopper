@@ -18,10 +18,6 @@ GeoHopper is an independent project, not an official Seequent, Bentley or McNeel
 
 ## Components
 
-![GeoHopper component icon overview](graphics/overview.png)
-
-The image is an icon overview, not a screenshot of a running analysis.
-
 | Component | Purpose |
 |---|---|
 | GeoHopper Connection | Check the Input server and provide connection settings |
