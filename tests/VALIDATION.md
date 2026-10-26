@@ -1,6 +1,6 @@
 # Validation scope
 
-The release build runs 177 automated assertions covering geometry/material validation,
+The release build runs 210 automated assertions covering geometry/material validation,
 analysis phases, encrypted Input/Output protocol handling, sampled results and numerical
 metrics. Icon dimensions and embedded resource presence are also checked during build.
 
@@ -27,3 +27,14 @@ failure propagation and model fingerprint invalidation. All 17 icons are embedde
 The plate line preview, existing GH document port migration, native plate material
 property acceptance and actual PLAXIS meshing remain pending interactive acceptance.
 See docs/WP1-PLATES-TEST.md. No live server was modified during this implementation.
+
+## Excavation WP2 (0.6.0.0)
+
+The build passed 210 assertions, including 33 new excavation checks. Tests cover
+plate/soil contact geometry, matching opposite faces, excavation activation, stale plate
+references, initial-state eligibility, K0 command generation, plate-line refinement, and
+failure propagation. All 18 component icons are embedded.
+
+These are core and encrypted protocol-double checks. Native positive/negative side mapping,
+mesh behavior, K0 property acceptance and physical excavation convergence remain pending
+joint live acceptance in docs/WP2-EXCAVATION-TEST.md. No live PLAXIS model was modified.

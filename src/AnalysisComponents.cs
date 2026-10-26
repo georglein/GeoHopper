@@ -92,17 +92,18 @@ namespace GeoHopper
     public sealed class PhaseComponent : DefinitionComponent
     {
         /// <summary>Creates a phase editor for initial gravity loading or subsequent plastic stages.</summary>
-        public PhaseComponent():base("Phase","Phase","Full active-ID lists. Empty Parent creates the initial gravity phase; other phases are Plastic. Dry conditions.","Analysis") {}
+        public PhaseComponent():base("Phase","Phase","Full active-ID lists. Empty Parent creates the selected initial phase; other phases are Plastic. Dry conditions.","Analysis") {}
         /// <inheritdoc/>
         protected override void RegisterInputParams(GH_InputParamManager p)
         {
             p.AddTextParameter("ID","ID","Unique phase ID",GH_ParamAccess.item,"Initial");
-            p.AddTextParameter("Parent","Parent","Parent phase ID; empty means initial gravity loading",GH_ParamAccess.item,""); p[1].Optional=true;
+            p.AddTextParameter("Parent","Parent","Parent phase ID; empty means initial phase",GH_ParamAccess.item,""); p[1].Optional=true;
             p.AddTextParameter("Active regions","Regions","Full list of active region IDs, not only changes",GH_ParamAccess.list);
             p.AddTextParameter("Active interfaces","Interfaces","Full list of active contact IDs",GH_ParamAccess.list); p[3].Optional=true;
             p.AddTextParameter("Active loads","Loads","Full list of active load IDs",GH_ParamAccess.list); p[4].Optional=true;
             p.AddBooleanParameter("Reset displacements","Reset","Reset at this phase start; normally true only just after gravity initialization",GH_ParamAccess.item,false);
             p.AddTextParameter("Active plates","Plates","Full list of active plate IDs; empty means all plates inactive",GH_ParamAccess.list); p[6].Optional=true;
+            p.AddTextParameter("Initial method","Initial","Initial phase only: Gravity loading or K0 procedure. K0 supports dry horizontal soil layers.",GH_ParamAccess.item,"Gravity loading");
         }
         /// <inheritdoc/>
         protected override void RegisterOutputParams(GH_OutputParamManager p)
@@ -115,7 +116,8 @@ namespace GeoHopper
                 if(!d.GetData(0,ref id)||!d.GetDataList(2,regions)||!d.GetData(5,ref reset)) return;
                 d.GetData(1,ref parent); d.GetDataList(3,contacts); d.GetDataList(4,loads);
                 var plates=new List<string>(); d.GetDataList(6,plates);
-                var phase=new PhaseData(id,parent,regions,contacts,loads,reset,plates);
+                string method="Gravity loading"; d.GetData(7,ref method);
+                var phase=new PhaseData(id,parent,regions,contacts,loads,reset,plates,method);
                 d.SetData(0,new DefinitionGoo<PhaseData>(phase)); d.SetData(1,phase.Id);
             } catch(Exception ex) { Report(ex); }
         }
@@ -127,13 +129,14 @@ namespace GeoHopper
     public sealed class MeshSettingsComponent : DefinitionComponent
     {
         /// <summary>Creates mesh settings using metres regardless of Rhino document units.</summary>
-        public MeshSettingsComponent():base("Mesh Settings","Mesh","Absolute element size [m], with optional local region refinement.","Analysis") {}
+        public MeshSettingsComponent():base("Mesh Settings","Mesh","Absolute element size [m], with optional local region and plate-line refinement.","Analysis") {}
         /// <inheritdoc/>
         protected override void RegisterInputParams(GH_InputParamManager p)
         {
             p.AddNumberParameter("Element size [m]","Size","Global target element dimension in metres",GH_ParamAccess.item,.5);
             p.AddTextParameter("Refine regions","Regions","Optional region IDs to refine locally",GH_ParamAccess.list); p[1].Optional=true;
             p.AddIntegerParameter("Refinement passes","Passes","Number of local refine operations, 0 to 3",GH_ParamAccess.item,1);
+            p.AddTextParameter("Refine plates","Plates","Optional plate IDs for local line refinement",GH_ParamAccess.list); p[3].Optional=true;
         }
         /// <inheritdoc/>
         protected override void RegisterOutputParams(GH_OutputParamManager p) { p.AddGenericParameter("Mesh","Mesh","Mesh settings definition",GH_ParamAccess.item); }
@@ -143,7 +146,8 @@ namespace GeoHopper
             try {
                 double size=0; int passes=0; var ids=new List<string>();
                 if(!d.GetData(0,ref size)||!d.GetData(2,ref passes)) return;
-                d.GetDataList(1,ids); d.SetData(0,new DefinitionGoo<MeshData>(new MeshData(size,ids,passes)));
+                var plates=new List<string>(); d.GetDataList(3,plates);
+                d.GetDataList(1,ids); d.SetData(0,new DefinitionGoo<MeshData>(new MeshData(size,ids,passes,plates)));
             } catch(Exception ex) { Report(ex); }
         }
         /// <inheritdoc/>

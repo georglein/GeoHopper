@@ -1,12 +1,12 @@
 # GeoHopper component graphics
 
-Complete set for the 17 current components, using the approved outline style.
+Complete set for the 18 current components, using the approved outline style.
 Each category has exactly one accent colour and one pale tint of that colour.
 Dark outlines and white details are shared neutral colours.
 
 ## Files
 
-- `svg/`: 17 editable vector originals, each with a 24 by 24 viewBox.
+- `svg/`: 18 editable vector originals, each with a 24 by 24 viewBox.
 - `png/24/`: transparent 24 by 24 PNGs for the Grasshopper Icon bitmap property.
 - `png/48/` and `png/96/`: larger transparent exports for previews and other uses.
 - `manifest.json`: component class, category, palette and file mapping.
@@ -18,7 +18,7 @@ Dark outlines and white details are shared neutral colours.
 | --- | --- | --- |
 | Analysis | `#3977BA` | Phase, Mesh Settings, Calculate |
 | Connection | `#178BA4` | GeoHopper Connection |
-| Geometry | `#168579` | Region, Interface |
+| Geometry | `#168579` | Region, Interface, Plate Interface |
 | Loads | `#C87820` | Line Load |
 | Material | `#A06439` | Material - Linear Elastic, Material - Mohr-Coulomb, Plate Material |
 | Model | `#B64C78` | Model, Build Model |

@@ -129,3 +129,19 @@ is rejected in Grasshopper before contacting PLAXIS. Model fingerprints include 
 geometry, material and phase activation inputs. No Python runtime backend is introduced.
 Native commands/properties were checked against the installed PLAXIS 2D 2025.1 command
 reference (PlateMat, plate and platemat); protocol doubles are not native acceptance.
+
+## Excavation contacts and initial state (0.6.0.0)
+
+PlateInterfaceComponent wraps InterfaceData with a plate ID/signature and one soil host.
+The legacy constructor still describes two continuum regions. AnalysisData validates both
+forms, permits matching opposite plate faces and checks complete phase snapshots. Segments
+are normalized to source-plate direction, but native side markers require live inspection.
+
+InitialStateRules restricts automatic K0 to filled rectangular domains with horizontal MC
+layers. PhaseData stores an explicit initial method; old calls default to Gravity loading.
+MeshData optionally lists plate IDs. ModelBuilder retains their returned geometric Line
+handles; AnalysisRunner refines those Lines (not Plate features) before generating the mesh.
+All new settings participate in immutable signatures and stale-result invalidation.
+
+Reference checked: installed PLAXIS 2D 2025.1 refine command and Plate/Line objects;
+[material property compatibility](https://bentleysystems.service-now.com/community?id=kb_article&sysparm_article=KB0108381).

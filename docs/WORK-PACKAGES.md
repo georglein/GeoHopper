@@ -13,12 +13,19 @@ Automated validation: build.ps1 passed all 177 assertions and verified 17 icons.
 See tests/VALIDATION.md and artifacts/staging logs.
 Local installation: 0.5.0.0 published to dist with Rhino closed; prior binaries backed up
 under artifacts/backups/20261022-135356-052. No GitHub push or merge performed.
-Live acceptance: pending. Follow WP1-PLATES-TEST.md. Do not merge to main until accepted.
+Live acceptance: maintainer reported that WP1 worked successfully. See WP1-PLATES-TEST.md.
 
 ## WP2 - Contacts and excavation
 
-Extend contacts to plate sides and revise activation rules for excavated neighbours.
-Add line refinement and appropriate initial-state controls; build/solve the first excavation.
+Baseline checkpoint: b0d167a. Branch: codex/wp2-excavation. Candidate: 0.6.0.0.
+Implemented: Plate Interface, host-aware activation validation, matching opposite faces,
+plate-line mesh refinement, and restricted automatic dry K0 initialization.
+Build: passed all 210 automated assertions; 18 icons embedded.
+Local installation: 0.6.0.0 installed with Rhino closed. Previous binaries backed up
+under artifacts/backups/20261026-230542-134.
+Live acceptance: pending.
+Follow WP2-EXCAVATION-TEST.md. Do not claim native convergence from protocol tests.
+No GitHub push or merge is part of this work package.
 
 ## WP3 - Strut and deeper excavation
 

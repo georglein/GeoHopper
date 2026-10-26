@@ -111,13 +111,84 @@ internal static class AnalysisProbe
         Check("Plate activation changes invalidate phase signature",model.Analysis.Phases[2].Signature()!=phaseChanged.Signature());
     }
 
+
+    /// <summary>Constructs a dry four-region excavation with two plate walls and segmented face contacts.</summary>
+    internal static ModelData ExcavationDemo()
+    {
+        var soil=Soil();
+        var regions=new[]{new RegionData("LeftSoil",Box(-3,-6,2,6),soil),new RegionData("DeepSoil",Box(-1,-6,2,5),soil),
+            new RegionData("Cut",Box(-1,-1,2,1),soil),new RegionData("RightSoil",Box(1,-6,2,6),soil)};
+        var mat=new PlateMaterialData("PlateConcrete",12e9,160e6,.2,9600,true,0);
+        var plates=new[]{new PlateData("Left",new SegmentData(new XY(-1,-4),new XY(-1,0)),mat),
+            new PlateData("Right",new SegmentData(new XY(1,-4),new XY(1,0)),mat)};
+        var contacts=new System.Collections.Generic.List<InterfaceData>();
+        foreach(var p in plates)
+        {
+            bool left=p.Id=="Left"; double x=p.Segment.A.X;
+            var bottom=new SegmentData(new XY(x,-4),new XY(x,-1));
+            var top=new SegmentData(new XY(x,-1),new XY(x,0));
+            contacts.Add(new InterfaceData(p.Id+"OuterBottom",bottom,p,left?"LeftSoil":"RightSoil",soil,true,.67));
+            contacts.Add(new InterfaceData(p.Id+"OuterTop",top,p,left?"LeftSoil":"RightSoil",soil,true,.67));
+            contacts.Add(new InterfaceData(p.Id+"InnerBottom",bottom,p,"DeepSoil",soil,false,.67));
+            contacts.Add(new InterfaceData(p.Id+"InnerTop",top,p,"Cut",soil,false,.67));
+        }
+        var all=regions.Select(p=>p.Id).ToArray(); var activePlates=plates.Select(p=>p.Id).ToArray();
+        var phases=new[]{new PhaseData("Initial","",all,null,null,false,null,"K0 procedure"),
+            new PhaseData("Install","Initial",all,contacts.Select(c=>c.Id),null,true,activePlates),
+            new PhaseData("Excavate","Install",all.Where(id=>id!="Cut"),contacts.Where(c=>c.RegionA!="Cut").Select(c=>c.Id),null,false,activePlates)};
+        return new ModelData("AnalysisDemo",regions,0,contacts,null,phases,new MeshData(.5,null,1,activePlates),plates);
+    }
+    /// <summary>Exercises contact topology, excavation snapshots, mesh references and conservative K0 eligibility.</summary>
+    private static void ExcavationCore()
+    {
+        var model=ExcavationDemo(); var a=model.Analysis; var p=model.Plates[0]; var c=a.Interfaces[0];
+        Check("K0 excavation fixture accepted",a.Phases[0].InitialMethod=="K0 procedure" && a.Interfaces.Count==8);
+        Check("Excavation preserves outer contacts and removes two inner contacts",a.Phases[2].Interfaces.Count==6 && !a.Phases[2].Regions.Contains("Cut"));
+        Check("Opposite plate faces can coincide",a.Interfaces[0].OppositeFace(a.Interfaces[2]));
+        var reversed=new InterfaceData("Reversed",new SegmentData(c.Segment.B,c.Segment.A),p,c.RegionA,Soil(),true,.67);
+        Check("Contact direction normalized to source plate",reversed.Segment.Command()==c.Segment.Command());
+        Reject("Off-plate contact rejected",()=>new InterfaceData("Bad",new SegmentData(new XY(0,-2),new XY(0,-1)),p,"Cut",Soil(),true,.67));
+        Reject("Unknown plate refinement rejected",()=>new AnalysisData(model.Regions,a.Interfaces,a.Loads,a.Phases,new MeshData(.5,null,1,new[]{"Missing"}),model.Plates));
+        Reject("Unknown initial method rejected",()=>new PhaseData("Initial","",new[]{"LeftSoil"},null,null,false,null,"K0"));
+        Reject("K0 selection rejected on child",()=>new PhaseData("Child","Initial",new[]{"LeftSoil"},null,null,false,null,"K0 procedure"));
+        var noPlate=new PhaseData("Install","Initial",a.Phases[1].Regions,a.Phases[1].Interfaces,null,true,new[]{"Right"});
+        Reject("Active plate contact needs active plate",()=>new AnalysisData(model.Regions,a.Interfaces,null,new[]{a.Phases[0],noPlate},a.Mesh,model.Plates));
+        var cutContact=new PhaseData("Excavate","Install",a.Phases[2].Regions,a.Phases[1].Interfaces,null,false,a.Phases[2].Plates);
+        Reject("Excavated soil contact cannot remain active",()=>new AnalysisData(model.Regions,a.Interfaces,null,new[]{a.Phases[0],a.Phases[1],cutContact},a.Mesh,model.Plates));
+        var duplicate=new InterfaceData("Duplicate",c.Segment,p,c.RegionA,Soil(),true,.67);
+        Reject("Same-face overlap rejected",()=>new AnalysisData(model.Regions,a.Interfaces.Concat(new[]{duplicate}),null,a.Phases,a.Mesh,model.Plates));
+        var partial=new InterfaceData("Partial",new SegmentData(new XY(-1,-3),new XY(-1,-2)),p,"DeepSoil",Soil(),false,.67);
+        Reject("Opposite faces require matching segment boundaries",()=>new AnalysisData(model.Regions,new[]{c,partial},null,new[]{a.Phases[0],new PhaseData("Install","Initial",a.Phases[0].Regions,null,null,false)},a.Mesh,model.Plates));
+        var changedPlate=new PlateData(p.Id,p.Segment,new PlateMaterialData("Changed",1e9,1e7,.2,1000,true,0));
+        Reject("Stale contact plate definition rejected",()=>new AnalysisData(model.Regions,a.Interfaces,null,a.Phases,a.Mesh,new[]{changedPlate,model.Plates[1]}));
+        var wrongBoundary=new InterfaceData("Bad",c.Segment,p,"Cut",Soil(),true,.67);
+        Reject("Contact must be on named soil boundary",()=>new AnalysisData(model.Regions,new[]{wrongBoundary},null,a.Phases,a.Mesh,model.Plates));
+        var init=new PhaseData("Initial","",model.Regions.Select(x=>x.Id).Where(x=>x!="Cut"),null,null,false,null,"K0 procedure");
+        Reject("K0 initial excavation rejected",()=>InitialStateRules.ValidateK0(model.Regions,init));
+        var wallDemo=Demo();
+        Reject("K0 continuum concrete rejected",()=>InitialStateRules.ValidateK0(wallDemo.Regions,new PhaseData("Initial","",wallDemo.Regions.Select(x=>x.Id),null,null,false,null,"K0 procedure")));
+        var slope=new[]{new RegionData("Slope",new[]{new XY(0,0),new XY(2,0),new XY(2,1),new XY(0,2)},Soil())};
+        Reject("K0 slope rejected",()=>InitialStateRules.ValidateK0(slope,new PhaseData("Initial","",new[]{"Slope"},null,null,false,null,"K0 procedure")));
+        var gap=new[]{new RegionData("A",Box(0,0,1,1),Soil()),new RegionData("B",Box(2,0,1,1),Soil())};
+        Reject("K0 gaps rejected",()=>InitialStateRules.ValidateK0(gap,new PhaseData("Initial","",new[]{"A","B"},null,null,false,null,"K0 procedure")));
+        var other=new MaterialData("Other",true,40e6,.3,18000,20000,5000,Math.PI/6,0,0);
+        var lateral=new[]{new RegionData("A",Box(0,0,1,1),Soil()),new RegionData("B",Box(1,0,1,1),other)};
+        Reject("K0 lateral material discontinuity rejected",()=>InitialStateRules.ValidateK0(lateral,new PhaseData("Initial","",new[]{"A","B"},null,null,false,null,"K0 procedure")));
+        var layered=new[]{new RegionData("A",Box(0,0,2,1),Soil()),new RegionData("B",Box(0,1,2,1),other)};
+        InitialStateRules.ValidateK0(layered,new PhaseData("Initial","",new[]{"A","B"},null,null,false,null,"K0 procedure"));
+        Check("K0 horizontal layers accepted",true);
+        Check("Initial method changes invalidate phase signature",a.Phases[0].Signature()!=new PhaseData("Initial","",a.Phases[0].Regions,null,null,false).Signature());
+        Check("Plate refinement changes invalidate mesh signature",a.Mesh.Signature()!=new MeshData(.5,null,1).Signature());
+        Check("Legacy defaults remain gravity and no plate refinement",Demo().Analysis.Phases[0].InitialMethod=="Gravity loading" && Demo().Analysis.Mesh.RefinePlates.Count==0);
+    }
+
     /// <summary>Runs core assertions or a build/solve sequence against an isolated server.</summary>
     public static int Main(string[] args)
     {
-        if(args.Length==0) { Core(); PlateCore(); return 0; }
+        if(args.Length==0) { Core(); PlateCore(); ExcavationCore(); return 0; }
         Console.InputEncoding=new System.Text.UTF8Encoding(false);
         var connection=new ConnectionData("127.0.0.1",Int32.Parse(args[0]),Console.ReadLine());
-        var build=ModelBuilder.BuildAsync(args[2]=="plates"?PlateDemo():Demo(),connection,args[1],s=>{}).GetAwaiter().GetResult();
+        var build=ModelBuilder.BuildAsync(args[2]=="excavation"?ExcavationDemo():args[2]=="plates"?PlateDemo():Demo(),connection,args[1],s=>{}).GetAwaiter().GetResult();
         CalculationResult calc=null;
         if(build.Success && build.Receipt!=null)
         {

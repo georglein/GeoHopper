@@ -1,6 +1,16 @@
 # Changelog
 
-## 0.5.0.0 - Excavation WP1: plates (live acceptance pending)
+## 0.6.0.0 - Excavation WP2 (live acceptance pending)
+
+- Add Plate Interface for segmented contacts between a plate and a named soil region.
+- Permit matching opposite plate faces; reject stale plate references and invalid phase contacts.
+- Append Phase.Initial method with backward-compatible Gravity loading and restricted dry K0.
+- Append Mesh Settings.Refine plates; refine native geometric lines before meshing.
+- Add an embedded icon, excavation validation/transfer tests and a joint acceptance guide.
+- Existing two-region contacts and legacy gravity workflows retain their contracts.
+- Native side selection, meshing, K0 command acceptance and excavation convergence require live testing.
+
+## 0.5.0.0 - Excavation WP1: plates (user accepted)
 
 - Add Plate Material and Plate, with isotropic elastic SI properties and line preview.
 - Append optional Model.Plates and Phase.Active plates without changing existing GUIDs/ports.

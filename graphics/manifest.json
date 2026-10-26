@@ -239,6 +239,18 @@
       "png24": "png/24/plate.png",
       "png48": "png/48/plate.png",
       "png96": "png/96/plate.png"
+    },
+    {
+      "id": "plate-interface",
+      "title": "Plate Interface",
+      "componentClass": "PlateInterfaceComponent",
+      "category": "Geometry",
+      "pluginCategory": "Geometry",
+      "meaning": "Soil contact on one plate face",
+      "svg": "svg/plate-interface.svg",
+      "png24": "png/24/plate-interface.png",
+      "png48": "png/48/plate-interface.png",
+      "png96": "png/96/plate-interface.png"
     }
   ]
 }

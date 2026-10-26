@@ -80,7 +80,10 @@ class Handler(BaseHTTPRequestHandler):
             for kind in types.get(verb, []):
                 guid = str(uuid.uuid4())
                 objects.append({"guid": guid, "type": kind})
+                state.setdefault("types", {})[guid] = kind
             ok = verb != state.get("fail_command")
+            if verb == "refine":
+                ok = ok and state.get("types", {}).get(cmd.split()[1]) in ("Polygon", "Line")
             # Current PLAXIS rejects the obsolete name still present in bundled legacy HTML.
             if verb == "soilmat" and '"InterfaceStrengthMethod"' in cmd:
                 ok = False
@@ -157,6 +160,21 @@ if __name__ == "__main__":
             check("Plate material failure stops before meshing", not r["BuildSuccess"] and not any(c.startswith("meshd ") for c in commands))
             r = run(server.server_port, folder, mode="plates", fail_command="plate")
             check("Plate creation failure yields no receipt", not r["BuildSuccess"] and not r["HasReceipt"])
+            r = run(server.server_port, folder, mode="excavation")
+            check("Dry excavation completes three prepared phases", r["BuildSuccess"] and r["Success"] and len(r["Status"]) == 3)
+            check("K0 native initialization selected once", sum('"DeformCalcType" "K0 procedure"' in c for c in commands) == 1)
+            check("K0 automatic material determination explicit", sum('"K0Determination" "Automatic"' in c for c in commands) == 1)
+            check("Both interface faces created with segmented contacts", sum(c.startswith("posinterface ") for c in commands) == 4 and sum(c.startswith("neginterface ") for c in commands) == 4)
+            check("Both plate lines refined before meshing", sum(c.startswith("refine ") and state["types"].get(c.split()[1]) == "Line" for c in commands) == 2 and max(i for i,c in enumerate(commands) if c.startswith("refine ")) < commands.index("meshd 0.5 True"))
+            excavation_guid = next(g for g,n in state["names"].items() if n == "GH_Phase_Excavate")
+            active = {c.split()[1] for c in commands if c.startswith("activate ") and c.split()[2] == excavation_guid}
+            check("Excavated soil is absent from activation snapshot", state["staged"]["GH_R_Cut"] not in active)
+            check("Excavated-face contacts inactive while retained contacts remain", all((g in active) == (not n.endswith("InnerTop")) for n,g in state["staged"].items() if n.startswith("GH_I_")))
+            check("Both plates remain active after excavation", all(g in active for n,g in state["staged"].items() if n.startswith("GH_Plate_")))
+            r = run(server.server_port, folder, mode="excavation", fail_command="refine")
+            check("Line refinement failure stops before mesh and calculation", not r["BuildSuccess"] and not any(c.startswith(("meshd ","calculate ")) for c in commands))
+            r = run(server.server_port, folder, mode="excavation", fail_command="neginterface")
+            check("Negative interface failure stops before meshing", not r["BuildSuccess"] and not any(c.startswith("meshd ") for c in commands))
             r = run(server.server_port, folder, fail_phase="GH_Phase_Install")
             check("Native failed phase stops descendants", not r["Success"] and "Controlled convergence failure" in r["Error"] and sum(c.startswith("calculate ") for c in commands) == 2)
             check("Failure retains per-phase status", len(r["Status"]) == 2 and "FAILED" in r["Status"][-1])

@@ -84,3 +84,10 @@ EA input or volumetric gamma in w. These conversions do not establish cracked co
 stiffness, reinforcement effects, strength or an appropriate constitutive assumption.
 The isotropic defaults E=30e9 Pa, t=0.4 m, gamma=24000 N/m3 give EA=12e9 N/m,
 EI=160e6 N m2/m, w=9600 N/m/m. PLAXIS receives these values in its m/N/s project units.
+
+## Excavation WP2 settings
+
+Plate Interface segments follow Rhino document units and convert to metres. Rinter and
+K0 are dimensionless. K0 is currently derived by PLAXIS automatic material determination;
+no manual K0 input is exposed. Plate-line refinement shares Refinement passes with region
+refinement and occurs before meshd using the SI element-size setting.

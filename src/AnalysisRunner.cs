@@ -41,7 +41,7 @@ namespace GeoHopper
 
         /// <summary>Creates custom contacts and uniform loads, generates the mesh and prepares dry staged phases.</summary>
         private static async Task<List<string>> PrepareAnalysis(HttpClient http,string password,ModelData model,
-            Dictionary<string,string> soilGuids,Dictionary<string,string> polygonGuids,Dictionary<string,string> plateGuids,Action<string> report)
+            Dictionary<string,string> soilGuids,Dictionary<string,string> polygonGuids,Dictionary<string,string> plateGuids,Dictionary<string,string> plateLines,Action<string> report)
         {
             var analysis=model.Analysis;
             var interfaces=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
@@ -67,8 +67,12 @@ namespace GeoHopper
             report("Generating finite-element mesh...");
             await Command(http,password,"gotomesh").ConfigureAwait(false);
             for(int pass=0;pass<analysis.Mesh.RefinementPasses;pass++)
+            {
                 foreach(var id in analysis.Mesh.RefineRegions)
                     await Command(http,password,"refine "+polygonGuids[id]).ConfigureAwait(false);
+                foreach(var id in analysis.Mesh.RefinePlates)
+                    await Command(http,password,"refine "+plateLines[id]).ConfigureAwait(false);
+            }
             await Command(http,password,"meshd "+Rules.N(analysis.Mesh.ElementSize)+" True").ConfigureAwait(false);
             await Command(http,password,"gotostages").ConfigureAwait(false);
             // Staged construction exposes SourceFeature objects with new GUIDs. Resolve
@@ -93,7 +97,7 @@ namespace GeoHopper
                 string name="GH_Phase_"+phase.Id;
                 await Command(http,password,"rename "+guid+" "+Rules.Quote(name)).ConfigureAwait(false);
                 await Command(http,password,"setproperties "+guid+" \"Identification\" "+Rules.Quote(phase.Id)+
-                    " \"DeformCalcType\" "+Rules.Quote(initial?"Gravity loading":"Plastic")+
+                    " \"DeformCalcType\" "+Rules.Quote(initial?phase.InitialMethod:"Plastic")+
                     " \"PorePresCalcType\" \"Phreatic\" \"ShouldCalculate\" True").ConfigureAwait(false);
                 if(!initial)
                     await Command(http,password,"set "+name+".Deform.ResetDisplacementsToZero "+(phase.ResetDisplacements?"True":"False")).ConfigureAwait(false);

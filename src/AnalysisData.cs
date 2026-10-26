@@ -28,7 +28,7 @@ namespace GeoHopper
             return false;
         }
         /// <summary>Tests finite segment containment within the metre tolerance.</summary>
-        private static bool OnEdge(XY a,XY b,XY p)
+        internal static bool OnEdge(XY a,XY b,XY p)
         {
             double dx=b.X-a.X,dy=b.Y-a.Y;
             return Math.Abs(dx*(p.Y-a.Y)-dy*(p.X-a.X))<=Rules.Tolerance*Math.Sqrt(dx*dx+dy*dy) &&
@@ -51,6 +51,7 @@ namespace GeoHopper
     internal sealed class InterfaceData
     {
         internal readonly string Id, RegionA, RegionB;
+        internal readonly string PlateId;
         internal readonly SegmentData Segment;
         internal readonly MaterialData Material;
         internal readonly bool Positive;
@@ -64,6 +65,28 @@ namespace GeoHopper
             Rules.Range(rinter,.01,1,"Rinter");
             Segment=segment; Material=material; Positive=positive; Rinter=rinter;
         }
+        /// <summary>Defines one plate/soil contact segment, directed consistently with the source plate.</summary>
+        internal InterfaceData(string id,SegmentData segment,PlateData plate,string soilRegion,MaterialData material,bool positive,double rinter)
+        {
+            Id=Rules.Id(id); RegionA=Rules.Id(soilRegion); RegionB="";
+            if(plate==null || segment==null || material==null || !material.MohrCoulomb)
+                throw new ArgumentException("Plate Interface requires a plate, straight segment and drained MC material.");
+            if(!SegmentData.OnEdge(plate.Segment.A,plate.Segment.B,segment.A) || !SegmentData.OnEdge(plate.Segment.A,plate.Segment.B,segment.B))
+                throw new ArgumentException("Contact segment must lie entirely on its plate.");
+            double dot=(segment.B.X-segment.A.X)*(plate.Segment.B.X-plate.Segment.A.X)+(segment.B.Y-segment.A.Y)*(plate.Segment.B.Y-plate.Segment.A.Y);
+            Segment=dot>=0?segment:new SegmentData(segment.B,segment.A);
+            PlateId=plate.Id; PlateSignature=plate.Signature(); Material=material; Positive=positive;
+            Rules.Range(rinter,.01,1,"Rinter"); Rinter=rinter;
+        }
+        internal readonly string PlateSignature;
+        /// <summary>Allows coincident opposite faces only on the same plate and identical segment extents.</summary>
+        internal bool OppositeFace(InterfaceData other)
+        {
+            return PlateId!=null && other.PlateId!=null && String.Equals(PlateId,other.PlateId,StringComparison.OrdinalIgnoreCase) &&
+                Positive!=other.Positive && SegmentData.OnEdge(Segment.A,Segment.B,other.Segment.A) &&
+                SegmentData.OnEdge(Segment.A,Segment.B,other.Segment.B) && SegmentData.OnEdge(other.Segment.A,other.Segment.B,Segment.A) &&
+                SegmentData.OnEdge(other.Segment.A,other.Segment.B,Segment.B);
+        }
         /// <summary>Copies soil properties into a separately identified contact material; never mutates the source soil.</summary>
         internal string MaterialCommand()
         {
@@ -73,9 +96,9 @@ namespace GeoHopper
                 " \"TensionCutOff\" True \"TensileStrength\" 0 \"GapClosure\" True";
         }
         /// <summary>Includes geometry, side, region references and mechanical properties in the build identity.</summary>
-        internal string Signature() { return Id+"|"+Segment.Command()+"|"+RegionA+"|"+RegionB+"|"+Positive+"|"+MaterialCommand(); }
+        internal string Signature() { return Id+"|"+Segment.Command()+"|"+RegionA+"|"+RegionB+"|"+Positive+"|"+MaterialCommand()+"|"+PlateId+"|"+PlateSignature; }
         /// <inheritdoc/>
-        public override string ToString() { return Id+" | Contact: "+RegionA+" / "+RegionB; }
+        public override string ToString() { return Id+" | Contact: "+RegionA+" / "+(PlateId==null?RegionB:"Plate "+PlateId); }
     }
 
     /// <summary>Uniform global XY line force in N/m on a one-metre out-of-plane strip.</summary>
@@ -103,13 +126,18 @@ namespace GeoHopper
     /// <summary>Full activation snapshot, with an explicit parent; empty parent denotes the initial gravity phase.</summary>
     internal sealed class PhaseData
     {
-        internal readonly string Id,Parent;
+        internal readonly string Id,Parent,InitialMethod;
         internal readonly ReadOnlyCollection<string> Regions,Interfaces,Loads,Plates;
         internal readonly bool ResetDisplacements;
         /// <summary>Validates identifiers and copies lists so later GH solutions cannot mutate running jobs.</summary>
-        internal PhaseData(string id,string parent,IEnumerable<string> regions,IEnumerable<string> interfaces,IEnumerable<string> loads,bool reset,IEnumerable<string> plates=null)
+        internal PhaseData(string id,string parent,IEnumerable<string> regions,IEnumerable<string> interfaces,IEnumerable<string> loads,bool reset,IEnumerable<string> plates=null,string initialMethod="Gravity loading")
         {
             Id=Rules.Id(id); Parent=String.IsNullOrWhiteSpace(parent)?"":Rules.Id(parent.Trim());
+            if(initialMethod!="Gravity loading" && initialMethod!="K0 procedure")
+                throw new ArgumentException("Initial method must be Gravity loading or K0 procedure.");
+            if(Parent!="" && initialMethod!="Gravity loading")
+                throw new ArgumentException("Set Initial method only on the initial phase; leave its default on child phases.");
+            InitialMethod=initialMethod;
             Regions=Ids(regions); Interfaces=Ids(interfaces); Loads=Ids(loads); Plates=Ids(plates); ResetDisplacements=reset;
             if(Regions.Count==0) throw new ArgumentException("Each phase needs at least one active region.");
             if(Parent=="" && (reset || Interfaces.Count>0 || Loads.Count>0 || Plates.Count>0))
@@ -123,26 +151,26 @@ namespace GeoHopper
             return list.AsReadOnly();
         }
         /// <summary>Captures the complete activation state, rather than only changes from a parent.</summary>
-        internal string Signature() { return Id+"|"+Parent+"|"+String.Join(",",Regions)+"|"+String.Join(",",Interfaces)+"|"+String.Join(",",Loads)+"|"+ResetDisplacements+"|"+String.Join(",",Plates); }
+        internal string Signature() { return Id+"|"+Parent+"|"+String.Join(",",Regions)+"|"+String.Join(",",Interfaces)+"|"+String.Join(",",Loads)+"|"+ResetDisplacements+"|"+String.Join(",",Plates)+"|"+InitialMethod; }
         /// <inheritdoc/>
-        public override string ToString() { return Id+" | "+(Parent==""?"Initial gravity loading":"Plastic, parent "+Parent); }
+        public override string ToString() { return Id+" | "+(Parent==""?"Initial "+InitialMethod:"Plastic, parent "+Parent); }
     }
 
     /// <summary>Absolute global element dimension and repeated local refinement on selected region polygons.</summary>
     internal sealed class MeshData
     {
         internal readonly double ElementSize;
-        internal readonly ReadOnlyCollection<string> RefineRegions;
+        internal readonly ReadOnlyCollection<string> RefineRegions,RefinePlates;
         internal readonly int RefinementPasses;
         /// <summary>Validates bounded mesh controls; size is metres, not a relative coarseness factor.</summary>
-        internal MeshData(double size,IEnumerable<string> regions,int passes)
+        internal MeshData(double size,IEnumerable<string> regions,int passes,IEnumerable<string> plates=null)
         {
             Rules.Range(size,.001,1e4,"Element size [m]");
             if(passes<0 || passes>3) throw new ArgumentException("Refinement passes must be between 0 and 3.");
-            ElementSize=size; RefineRegions=PhaseData.Ids(regions); RefinementPasses=passes;
+            ElementSize=size; RefineRegions=PhaseData.Ids(regions); RefinePlates=PhaseData.Ids(plates); RefinementPasses=passes;
         }
         /// <summary>Captures meshing controls in the immutable model identity.</summary>
-        internal string Signature() { return Rules.N(ElementSize)+"|"+String.Join(",",RefineRegions)+"|"+RefinementPasses; }
+        internal string Signature() { return Rules.N(ElementSize)+"|"+String.Join(",",RefineRegions)+"|"+RefinementPasses+"|"+String.Join(",",RefinePlates); }
         /// <inheritdoc/>
         public override string ToString() { return "Element size "+Rules.N(ElementSize)+" m | "+RefinementPasses+" refinement passes"; }
     }
@@ -169,16 +197,27 @@ namespace GeoHopper
                 throw new ArgumentException("Provide 2 to 30 phases with exactly one initial phase (empty Parent).");
             if(ints.Count>100 || lds.Count>100) throw new ArgumentException("At most 100 interfaces and 100 loads are supported.");
             var reg=regions.ToDictionary(x=>x.Id,StringComparer.OrdinalIgnoreCase);
+            var plateMap=(plates??Enumerable.Empty<PlateData>()).ToDictionary(p=>p.Id,StringComparer.OrdinalIgnoreCase);
+            foreach(var id in mesh.RefinePlates) Require(plateMap,id,"mesh plate");
             foreach(var id in mesh.RefineRegions) Require(reg,id,"mesh region");
             foreach(var it in ints)
-                if(!it.Segment.OnBoundary(Require(reg,it.RegionA,"contact region")) ||
-                   !it.Segment.OnBoundary(Require(reg,it.RegionB,"contact region")))
-                    throw new ArgumentException("Interface "+it.Id+" must lie on a shared straight boundary of both regions.");
+            {
+                if(!it.Segment.OnBoundary(Require(reg,it.RegionA,"contact region")))
+                    throw new ArgumentException("Interface "+it.Id+" must lie on its soil region boundary. Split contacts at soil boundaries.");
+                if(it.PlateId==null)
+                {
+                    if(!it.Segment.OnBoundary(Require(reg,it.RegionB,"contact region")))
+                        throw new ArgumentException("Interface "+it.Id+" must lie on a shared straight boundary of both regions.");
+                }
+                else if(Require(plateMap,it.PlateId,"contact plate").Signature()!=it.PlateSignature)
+                    throw new ArgumentException("Plate Interface "+it.Id+" refers to a different plate definition than Model.Plates.");
+            }
             foreach(var l in lds)
                 if(!l.Segment.OnBoundary(Require(reg,l.Region,"load region")))
                     throw new ArgumentException("Load "+l.Id+" must lie on its host region boundary.");
             for(int i=0;i<ints.Count;i++) for(int j=i+1;j<ints.Count;j++)
-                if(ints[i].Segment.Overlaps(ints[j].Segment)) throw new ArgumentException("Contact segments overlap; use one interface per boundary segment.");
+                if(ints[i].Segment.Overlaps(ints[j].Segment) && !ints[i].OppositeFace(ints[j]))
+                    throw new ArgumentException("Overlapping contacts require identical segments on opposite sides of the same plate. Split both sides at the same levels.");
             for(int i=0;i<lds.Count;i++) for(int j=i+1;j<lds.Count;j++)
                 if(lds[i].Segment.Overlaps(lds[j].Segment)) throw new ArgumentException("Load segments overlap; combine their components.");
             var im=ints.ToDictionary(x=>x.Id,StringComparer.OrdinalIgnoreCase);
@@ -194,8 +233,9 @@ namespace GeoHopper
                 foreach(var id in p.Interfaces)
                 {
                     var it=Require(im,id,"active interface");
-                    if(!p.Regions.Contains(it.RegionA,StringComparer.OrdinalIgnoreCase) || !p.Regions.Contains(it.RegionB,StringComparer.OrdinalIgnoreCase))
-                        throw new ArgumentException("Phase "+p.Id+" activates contact "+id+" without both adjacent regions.");
+                    if(!p.Regions.Contains(it.RegionA,StringComparer.OrdinalIgnoreCase) ||
+                        (it.PlateId==null?!p.Regions.Contains(it.RegionB,StringComparer.OrdinalIgnoreCase):!p.Plates.Contains(it.PlateId,StringComparer.OrdinalIgnoreCase)))
+                        throw new ArgumentException("Phase "+p.Id+" activates contact "+id+" without its active soil and adjacent region/plate. Omit excavated-side contacts.");
                 }
                 foreach(var id in p.Loads)
                     if(!p.Regions.Contains(Require(lm,id,"active load").Region,StringComparer.OrdinalIgnoreCase))
@@ -211,6 +251,7 @@ namespace GeoHopper
             if(mesh.ElementSize>Math.Max(regions.Max(r=>r.Points.Max(p=>p.X))-regions.Min(r=>r.Points.Min(p=>p.X)),
                 regions.Max(r=>r.Points.Max(p=>p.Y))-regions.Min(r=>r.Points.Min(p=>p.Y))))
                 throw new ArgumentException("Element size exceeds the model extent.");
+            if(ordered[0].InitialMethod=="K0 procedure") InitialStateRules.ValidateK0(regions,ordered[0]);
             Interfaces=ints.AsReadOnly(); Loads=lds.AsReadOnly(); Phases=ordered.AsReadOnly();
         }
         /// <summary>Ensures IDs in each namespace are unique, ignoring case.</summary>

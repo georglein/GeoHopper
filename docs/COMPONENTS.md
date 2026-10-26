@@ -1,8 +1,13 @@
 # Component catalogue
 
+Version 0.6.0.0 adds Plate Interface and appends optional Phase.Initial method (input 8)
+and Mesh Settings.Refine plates (input 4). Existing defaults, GUIDs and port positions
+are preserved. WP1 plate transfer was accepted by the maintainer; WP2 live acceptance
+is pending. See WP2-EXCAVATION-TEST.md.
+
 Version 0.5.0.0 adds Plate Material and Plate. Model appends optional Plates (input 8);
 Phase appends optional Active plates (input 7). All existing GUIDs, ports and outputs
-retain their order. New plate transfer and GH document compatibility require live acceptance.
+retain their order. The maintainer reported successful WP1 interactive testing.
 
 Version 0.4.0.1 adds the supplied component icons. They are embedded in the plugin;
 no external graphics folder is required at runtime. GUIDs, ports and categories are unchanged.
@@ -255,15 +260,18 @@ Category: Analysis. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed08.
 | Active loads | Optional full list of active load IDs |
 | Reset displacements | False; explicitly resets at the start of a non-initial phase |
 | Active plates | Optional full list of plate IDs; omitted plates are inactive |
+| Initial method | Gravity loading (default) or K0 procedure; initial phase only |
 
 Outputs: Phase and ID. Use the ID output as a later phase's Parent.
 Lists are complete snapshots; omitted objects are inactive. They are not incremental lists.
-The initial phase permits no contacts, loads, plates or displacement reset. It uses Gravity loading;
-all later phases use Plastic. Active contacts require both adjacent regions.
+The initial phase permits no contacts, loads, plates or displacement reset. It uses the selected Initial method;
+all later phases use Plastic. Region contacts require both adjacent regions. Plate contacts
+require their named soil region and plate active; omit contacts facing excavated soil.
 Every phase has dry soil conditions and standard plane-strain supports (bottom fixed in
 both directions; vertical sides fixed horizontally; top free). Margin must be zero.
 Reset removes displacement history at phase start, not the inherited stress state.
-No K0, groundwater, consolidation, safety or custom boundary controls are exposed yet.
+Groundwater, consolidation, safety and custom boundary controls are not exposed.
+K0 is restricted as documented below; leave Initial method at its default on child phases.
 
 ## Mesh Settings
 
@@ -274,10 +282,11 @@ Category: Analysis. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed09.
 | Element size [m] | 0.5; 0.001 to 10000 m, not exceeding model extent |
 | Refine regions | Optional region-ID list |
 | Refinement passes | 1; integer 0 to 3 |
+| Refine plates | Optional plate-ID list; refines their geometric lines before meshing |
 
 Output: Mesh. Uses native meshd with enhanced refinement and absolute metres, independent
 of Rhino document units. Each pass requests refine on the selected region polygons.
-No refinement is requested when the ID list is empty. This is not a mesh-convergence check.
+No refinement is requested when both ID lists are empty. This is not a mesh-convergence check.
 
 ## Calculate
 
@@ -433,7 +442,7 @@ IDs are case-insensitively unique. Collinear overlap is rejected; meeting endpoi
 crossing lines are allowed, subject to native meshing. Endpoints must be within the
 model contour. This bounds check does not prove soil support or structural stability.
 A plate does not remove soil, cut a concrete volume out of the region, create an
-interface, or establish a hydraulic boundary. Interfaces for plates are a later package.
+interface, or establish a hydraulic boundary. Use Plate Interface to define optional segmented soil contacts.
 
 Build creates each shared plate material once, assigns each returned Plate object,
 and names it GH_Plate_<ID>. After meshing it resolves staged handles by these names.
@@ -443,3 +452,48 @@ plates inactive. Existing Read Results/Material Quantity still address continuum
 not plate displacements, stiffness-based volumes or structural forces.
 
 See [the WP1 acceptance guide](WP1-PLATES-TEST.md) before using the new workflow.
+
+## Plate Interface
+
+Category: Geometry. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed17.
+
+| Input | Default / meaning |
+|---|---|
+| ID | PlateContact; unique among all interfaces |
+| Plate | Source Plate definition; must match the same ID/definition in Model.Plates |
+| Segment | Straight Rhino XY curve on the plate and one soil region boundary |
+| Soil region | Adjacent soil region ID |
+| Soil material | Drained MC source for a separate interface material |
+| Positive side | True; native positive or negative face, inspect in PLAXIS |
+| Rinter | 0.67; allowable input 0.01 to 1 |
+
+Outputs: Interface (connect to Model.Interfaces), ID (for Phase.Active interfaces).
+Segment direction is normalized to the source plate. This does NOT establish the native
+side: coincident pre-existing lines may retain a different native direction. Inspect the
+positive/negative markers and ensure they face the named soil BEFORE calculating.
+There is no automatic side detection or side-to-region geometric certification.
+
+Split contacts at every soil/excavation boundary. Where both faces overlap, use identical
+segment extents, the same plate and opposite native sides. Same-face or partially matching
+overlap is rejected. Two-region Interface behavior remains unchanged. Contacts are not
+silently auto-activated/deactivated: each Phase specifies the full active-ID list. Keeping
+a contact active with its soil removed or plate inactive is rejected before any API writes.
+Custom interface material creation retains the existing drained MC/Rinter/gap-closure rules.
+
+## Initial method and K0 scope
+
+Initial method accepts exactly `Gravity loading` (legacy default) or `K0 procedure`.
+Set K0 only on the phase whose Parent is empty. All child phases remain Plastic; their
+Initial method input must remain the default. The initial phase has no active structures,
+interfaces or loads and cannot reset displacements.
+
+The first K0 implementation is dry, drained MC with automatic K0 determination. All soil
+regions must initially be active and fill an axis-aligned rectangle without holes/steps.
+Each partition must be rectangular; at each elevation material properties must be laterally
+uniform. Horizontal layers with different materials are allowed. These deliberately narrow
+checks do not certify geological suitability or equilibrium. Slopes, lateral material
+changes, non-rectangular partitions and initially excavated regions are rejected in K0 mode.
+
+The builder explicitly sets soil K0Determination=Automatic and initial DeformCalcType to
+K0 procedure. Custom K0, overconsolidation history and groundwater controls are not added.
+For other geometries retain Gravity loading and assess its applicability independently.

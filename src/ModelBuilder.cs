@@ -99,6 +99,8 @@ namespace GeoHopper
                         report("Creating material "+material.Id+"...");
                         var reply=await Command(http,connection.Password,material.Command()).ConfigureAwait(false);
                         materials.Add(material.Id,Created(reply,"SoilMat"));
+                        if(model.Analysis!=null && model.Analysis.Phases[0].InitialMethod=="K0 procedure")
+                            await Command(http,connection.Password,"setproperties "+materials[material.Id]+" \"K0Determination\" \"Automatic\"").ConfigureAwait(false);
                     }
                     var mapping=new List<string>();
                     var soils=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
@@ -114,6 +116,7 @@ namespace GeoHopper
                         await Command(http,connection.Password,"rename "+polygon+" "+Rules.Quote("GH_P_"+region.Id)).ConfigureAwait(false);
                         mapping.Add(region.Id+" -> GH_R_"+region.Id+" | "+region.Material.Id);
                     }
+                    var plateLines=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
                     var plateGuids=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
                     var plateMaterials=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
                     foreach(var plate in model.Plates)
@@ -124,7 +127,10 @@ namespace GeoHopper
                             plateMaterials.Add(plate.Material.Id,Created(await Command(http,connection.Password,plate.Material.Command()).ConfigureAwait(false),"PlateMat"));
                         }
                         report("Creating plate "+plate.Id+"...");
-                        string feature=Created(await Command(http,connection.Password,plate.Command()).ConfigureAwait(false),"Plate");
+                        var plateReply=await Command(http,connection.Password,plate.Command()).ConfigureAwait(false);
+                        string feature=Created(plateReply,"Plate");
+                        if(model.Analysis!=null && model.Analysis.Mesh.RefinePlates.Contains(plate.Id,StringComparer.OrdinalIgnoreCase))
+                            plateLines.Add(plate.Id,Created(plateReply,"Line"));
                         await Command(http,connection.Password,"setmaterial "+feature+" "+plateMaterials[plate.Material.Id]).ConfigureAwait(false);
                         await Command(http,connection.Password,"rename "+feature+" "+Rules.Quote("GH_Plate_"+plate.Id)).ConfigureAwait(false);
                         plateGuids.Add(plate.Id,feature);
@@ -132,7 +138,7 @@ namespace GeoHopper
                     }
                     List<string> phaseGuids=null;
                     if(model.Analysis!=null)
-                        phaseGuids=await PrepareAnalysis(http,connection.Password,model,soils,polygons,plateGuids,report).ConfigureAwait(false);
+                        phaseGuids=await PrepareAnalysis(http,connection.Password,model,soils,polygons,plateGuids,plateLines,report).ConfigureAwait(false);
                     report("Saving completed model...");
                     await Command(http,connection.Password,"save "+Rules.Quote(targetFile)).ConfigureAwait(false);
                     result.ProjectFile=targetFile;

@@ -8,10 +8,10 @@ Implementation: direct C# encrypted local API; no Python backend or exchange-fil
 Build, Calculate and Read Results are explicit actions. All documentation and UI are
 English. Physical values use SI units. Stable component IDs preserve GH compatibility.
 
-Current development version: 0.5.0.0, with 17 components and embedded icons.
-Excavation WP1 adds elastic plates; see docs/WORK-PACKAGES.md for status and next steps.
+Current development version: 0.6.0.0, with 18 components and embedded icons.
+Excavation WP1 was accepted by the maintainer. WP2 adds plate contacts, refinement and K0; see docs/WORK-PACKAGES.md for status and next steps.
 Existing wall build/calculation and C# Output access have been exercised previously;
-new plate transfer and interactive GH document compatibility require live acceptance.
+the new excavation/contact/K0 workflow requires live acceptance.
 
 Components and their purposes are listed in README.md and detailed in docs/COMPONENTS.md.
 Examples are intentionally withheld; examples/ contains placeholders only.
@@ -20,6 +20,5 @@ Development: this repository root is the working project. Build/test into artifa
 publish to dist only while Rhino is closed. Load one GeoHopper copy in Grasshopper.
 Keep private GH/PLAXIS projects and credentials outside the repository.
 
-Next: jointly test Excavation WP1, then develop plate interfaces and staged excavation
-(WP2), struts (WP3), and structural results (WP4). Source publication does not imply that
+Next: jointly test Excavation WP2, then develop struts (WP3) and structural results (WP4). Source publication does not imply that
 engineering assumptions or analysis results have been independently validated.
