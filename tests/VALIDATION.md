@@ -1,6 +1,6 @@
 # Validation scope
 
-The release build runs 248 automated assertions covering geometry/material validation,
+The release build runs 250 automated assertions covering geometry/material validation,
 analysis phases, encrypted Input/Output protocol handling, sampled results and numerical
 metrics. Icon dimensions and embedded resource presence are also checked during build.
 
@@ -51,3 +51,12 @@ Native command names and properties were checked against the installed PLAXIS co
 reference. Automated tests use protocol doubles; they do not confirm native property
 acceptance, element connectivity or physical convergence. Joint WP2 and WP3 calculation
 acceptance remains pending. See docs/WP3-STRUTS-TEST.md. No live model was modified.
+
+## Anchor staged-property hotfix (0.7.0.1)
+
+The full build passed 250 assertions. The protocol double now rejects the invalid
+setproperties anchor setter and requires a property-level set with phase and value.
+Two additional checks cover phase/anchor failure diagnostics and refusal to calculate
+a partial build. The setter follows the installed native Python staged-property API.
+The isolated native probe could not establish a new server session; native acceptance
+of this hotfix remains pending in the user's running PLAXIS instance.

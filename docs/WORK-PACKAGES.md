@@ -49,3 +49,11 @@ Inspect Git status, this file and the latest commit before editing. Existing fun
 must remain compatible. Preserve English documentation and SI units. Private test models
 stay outside the repository. Never publish binaries while Rhino runs. Commit each coherent
 implementation state and record pending native acceptance rather than claiming it passed.
+
+## WP3 hotfix - staged anchor property (0.7.0.1)
+
+Checkpoint: 9abdb31. Replaced the rejected AdjustPrestress setproperties call with
+set GH_Anchor_<ID>.AdjustPrestress <phase> False. Progress diagnostics identify the
+anchor and phase before the command. Full build: 250 assertions passed.
+Published with Rhino closed; prior release backup: artifacts/backups/20261027-234527-810.
+Joint native retest remains pending; keep the GH definition unchanged and rebuild.

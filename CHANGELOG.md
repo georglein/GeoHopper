@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0.1
+
+- Fix phased anchor prestress assignment by using the native property-level set command.
+- Report the phase and anchor before deactivation and prestress assignment.
+- Reject the former invalid setter in protocol tests and cover failure diagnostics.
+
+
 ## 0.7.0.0 - Excavation WP3: axial struts (live acceptance pending)
 
 - Add Anchor Material (EA per element and spacing) and Node-to-Node Anchor with line preview.

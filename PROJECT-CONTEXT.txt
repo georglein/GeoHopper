@@ -8,7 +8,7 @@ Implementation: direct C# encrypted local API; no Python backend or exchange-fil
 Build, Calculate and Read Results are explicit actions. All documentation and UI are
 English. Physical values use SI units. Stable component IDs preserve GH compatibility.
 
-Current development version: 0.7.0.0, with 20 components and embedded icons.
+Current development version: 0.7.0.1, with 20 components and embedded icons.
 Excavation WP1 was accepted by the maintainer. WP2 adds plate contacts, refinement and K0; WP3 adds elastic node-to-node anchors; see docs/WORK-PACKAGES.md for status and next steps.
 Existing wall build/calculation and C# Output access have been exercised previously;
 the WP2 excavation and WP3 strut workflows require live calculation acceptance.

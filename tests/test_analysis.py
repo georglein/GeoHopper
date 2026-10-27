@@ -87,6 +87,14 @@ class Handler(BaseHTTPRequestHandler):
             # Current PLAXIS rejects the obsolete name still present in bundled legacy HTML.
             if verb == "soilmat" and '"InterfaceStrengthMethod"' in cmd:
                 ok = False
+            if "AdjustPrestress" in cmd:
+                parts = cmd.split()
+                # Staged setters address the property, then the phase and value.
+                valid = (verb == "set" and len(parts) == 4
+                         and parts[1].endswith(".AdjustPrestress")
+                         and parts[1].split(".")[0] in state["staged"]
+                         and parts[2] in state["names"] and parts[3] == "False")
+                ok = ok and valid and not state.get("fail_prestress")
             if verb in ("activate", "deactivate") and cmd.split()[1] != "Soils":
                 ok = ok and cmd.split()[1] in state["staged"].values()
             response = {"commands": [{"feedback": {"success": ok, "returnedobjects": objects,
@@ -183,12 +191,15 @@ if __name__ == "__main__":
             check("Both anchors assigned their native material", sum(c.startswith("setmaterial ") and c.split()[1] in geometry_anchors for c in commands) == 2)
             staged_anchors = {g for n,g in state["staged"].items() if n.startswith("GH_Anchor_")}
             check("Each phase deactivates all staged anchors first", sum(c.startswith("deactivate ") and c.split()[1] in staged_anchors for c in commands) == 12)
-            check("Prestress adjustment disabled explicitly for every anchor phase", sum('"AdjustPrestress"' in c and c.endswith(" False") for c in commands) == 12)
+            check("Prestress adjustment disabled explicitly for every anchor phase", sum(c.startswith("set GH_Anchor_") and ".AdjustPrestress " in c and c.endswith(" False") for c in commands) == 12)
             activated = [(c.split()[1],state["names"][c.split()[2]]) for c in commands if c.startswith("activate ") and c.split()[1] in staged_anchors]
             check("Anchors activate only at installation and later", len(activated) == 5 and [n for _,n in activated] == ["GH_Phase_Struts","GH_Phase_Struts","GH_Phase_Deepen","GH_Phase_Deepen","GH_Phase_Remove"])
             check("Removed strut stays inactive in final snapshot", activated[-1][0] == state["staged"]["GH_Anchor_Strut2"])
             deeper = next(g for g,n in state["names"].items() if n == "GH_Phase_Deepen")
             check("Second excavation volume stays inactive", not any(c == "activate " + state["staged"]["GH_R_Cut2"] + " " + deeper for c in commands))
+            r = run(server.server_port, folder, mode="struts", fail_prestress=True)
+            check("Prestress failure names anchor and phase", not r["BuildSuccess"] and "Preparing phase Initial: disabling prestress adjustment for anchor Strut1" in r["BuildError"])
+            check("Prestress failure prevents receipt and solve", not r["HasReceipt"] and not any(c.startswith("calculate ") for c in commands))
             for verb in ("anchormat", "n2nanchor"):
                 r = run(server.server_port, folder, mode="struts", fail_command=verb)
                 check(verb + " failure stops before meshing and solve", not r["BuildSuccess"] and not r["HasReceipt"] and not any(c.startswith(("meshd ","calculate ")) for c in commands))

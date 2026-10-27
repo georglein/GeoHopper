@@ -120,9 +120,12 @@ namespace GeoHopper
                     await Command(http,password,"deactivate "+item.Value+" "+guid).ConfigureAwait(false);
                 foreach(var item in anchorGuids)
                 {
+                    report("Preparing phase "+phase.Id+": deactivating anchor "+item.Key+"...");
                     await Command(http,password,"deactivate "+item.Value+" "+guid).ConfigureAwait(false);
-                    // WP3 is unprestressed: never inherit a prestress adjustment from another phase.
-                    await Command(http,password,"setproperties "+item.Value+" \"AdjustPrestress\" "+guid+" False").ConfigureAwait(false);
+                    // Staged properties use set <object.property> <phase> <value>,
+                    // matching the native Python staged-property setter.
+                    report("Preparing phase "+phase.Id+": disabling prestress adjustment for anchor "+item.Key+"...");
+                    await Command(http,password,"set GH_Anchor_"+item.Key+".AdjustPrestress "+guid+" False").ConfigureAwait(false);
                 }
                 report("Preparing phase "+phase.Id+": applying activation snapshot...");
                 foreach(var id in phase.Regions)
