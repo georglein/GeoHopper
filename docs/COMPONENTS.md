@@ -1,5 +1,10 @@
 # Component catalogue
 
+Version 0.7.0.0 adds Anchor Material and Node-to-Node Anchor. Model appends optional
+Anchors (input 9); Phase appends optional Active anchors (input 9). Existing port positions
+and GUIDs are preserved. WP2 calculation and WP3 live acceptance remain pending.
+See WP3-STRUTS-TEST.md for the joint test sequence.
+
 Version 0.6.0.0 adds Plate Interface and appends optional Phase.Initial method (input 8)
 and Mesh Settings.Refine plates (input 4). Existing defaults, GUIDs and port positions
 are preserved. WP1 plate transfer was accepted by the maintainer; WP2 live acceptance
@@ -135,6 +140,7 @@ Category: Model. Nickname: Model.
 | Phases | optional | Flattened Phase definitions |
 | Mesh | optional | Mesh Settings definition |
 | Plates | optional | Flattened Plate definitions; geometry-only builds are allowed |
+| Anchors | optional | Flattened Node-to-Node Anchor definitions |
 
 The last four ports are appended in 0.3.0.0. With all disconnected, WP1 behavior remains.
 Any analysis input requires Mesh Settings and 2 to 30 phases. Analysis phases must have
@@ -261,10 +267,11 @@ Category: Analysis. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed08.
 | Reset displacements | False; explicitly resets at the start of a non-initial phase |
 | Active plates | Optional full list of plate IDs; omitted plates are inactive |
 | Initial method | Gravity loading (default) or K0 procedure; initial phase only |
+| Active anchors | Optional full list of anchor IDs; omitted anchors are inactive |
 
 Outputs: Phase and ID. Use the ID output as a later phase's Parent.
 Lists are complete snapshots; omitted objects are inactive. They are not incremental lists.
-The initial phase permits no contacts, loads, plates or displacement reset. It uses the selected Initial method;
+The initial phase permits no contacts, loads, plates, anchors or displacement reset. It uses the selected Initial method;
 all later phases use Plastic. Region contacts require both adjacent regions. Plate contacts
 require their named soil region and plate active; omit contacts facing excavated soil.
 Every phase has dry soil conditions and standard plane-strain supports (bottom fixed in
@@ -497,3 +504,49 @@ changes, non-rectangular partitions and initially excavated regions are rejected
 The builder explicitly sets soil K0Determination=Automatic and initial DeformCalcType to
 K0 procedure. Custom K0, overconsolidation history and groundwater controls are not added.
 For other geometries retain Gravity loading and assess its applicability independently.
+
+## Anchor Material
+
+Category: Materials. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed18.
+
+| Input | Default | Contract |
+|---|---|---|
+| ID | StrutMaterial | Unique material ID, distinct from soil/plate/generated contact material IDs |
+| EA [N] | 2100000000 | Axial rigidity per individual anchor, positive, finite |
+| Spacing [m] | 3 | Out-of-plane distance between anchors; 1e-6 to 1e6 m |
+| Colour | Blue-grey | Rhino preview only |
+
+Output: Anchor material. Native AnchorMat with MaterialType=Elastic, EA and LSpacing.
+EA is NOT per metre of wall and is NOT a spring stiffness [N/m]. For E=210 GPa and
+A=0.01 m2, EA=2.1e9 N. The element spring stiffness is EA/L; PLAXIS applies out-of-plane
+spacing separately. Defaults are illustrative, not a selected steel section or design.
+This elastic model allows tension and compression; it has no capacity limits, buckling,
+prestress, connection slip or bending. It is not a compression-only strut formulation.
+
+## Node-to-Node Anchor
+
+Category: Structures. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed19.
+
+| Input | Contract |
+|---|---|
+| ID | Unique anchor ID; default Strut1 |
+| Line | One open straight World-XY curve, in Rhino document units |
+| Anchor material | Anchor Material output; other material types are rejected |
+| Start plate | Optional plate ID at the line start; blank disables this check |
+| End plate | Optional plate ID at the line end; blank disables this check |
+
+Outputs: Anchor, ID (for Phase.Active anchors), Length [m]. Material-coloured line preview.
+At most 100 anchors. IDs are case-insensitively unique. Overlapping collinear anchors,
+conflicting shared material definitions and endpoints outside the model contour are rejected.
+Named attachment plates must exist and contain the corresponding endpoint. The adapter
+never snaps points or introduces rigid links. Reversing the line requires reversing the
+start/end plate references. If an attachment is declared, that plate must be active in
+every phase in which the anchor is active. Blank references allow generic usage but do
+not certify support, connectivity or structural stability.
+
+Build creates/deduplicates AnchorMat sets, assigns returned NodeToNodeAnchor objects and
+names them GH_Anchor_<ID>. After meshing it re-resolves staged handles. Every phase starts
+with all anchors inactive and then activates exactly Active anchors. AdjustPrestress is
+explicitly False in every phase. The initial phase cannot activate anchors. Geometry-only
+builds without phases remain possible. No anchor forces are returned to Grasshopper yet;
+inspect PLAXIS Output until the structural-results package is implemented.

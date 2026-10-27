@@ -29,8 +29,14 @@ No GitHub push or merge is part of this work package.
 
 ## WP3 - Strut and deeper excavation
 
-Add Anchor Material and Node-to-Node Anchor with spacing and staged activation.
-Install the strut after the first excavation and calculate subsequent excavation stages.
+Baseline checkpoint: 2fea739. Branch: codex/wp3-struts. Candidate: 0.7.0.0.
+Implemented: Anchor Material, Node-to-Node Anchor, optional plate attachments,
+Model.Anchors and Phase.Active anchors, native transfer/activation and matching icons.
+Build: passed all 248 automated assertions; 20 component icons embedded.
+Local installation: 0.7.0.0 installed with Rhino closed. Previous binaries backed up
+under artifacts/backups/20261027-082529-863. Joint live acceptance: pending.
+WP2 calculation was not explicitly confirmed; verify it before the strut sequence.
+Follow WP3-STRUTS-TEST.md. No merge to main or GitHub push is part of this package.
 
 ## WP4 - Structural results
 

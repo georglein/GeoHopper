@@ -251,6 +251,30 @@
       "png24": "png/24/plate-interface.png",
       "png48": "png/48/plate-interface.png",
       "png96": "png/96/plate-interface.png"
+    },
+    {
+      "id": "anchor-material",
+      "title": "Anchor Material",
+      "componentClass": "AnchorMaterialComponent",
+      "category": "Material",
+      "pluginCategory": "Materials",
+      "meaning": "Axial stiffness per discrete anchor",
+      "svg": "svg/anchor-material.svg",
+      "png24": "png/24/anchor-material.png",
+      "png48": "png/48/anchor-material.png",
+      "png96": "png/96/anchor-material.png"
+    },
+    {
+      "id": "node-to-node-anchor",
+      "title": "Node-to-Node Anchor",
+      "componentClass": "NodeToNodeAnchorComponent",
+      "category": "Structures",
+      "pluginCategory": "Structures",
+      "meaning": "Axial connection between two nodes",
+      "svg": "svg/node-to-node-anchor.svg",
+      "png24": "png/24/node-to-node-anchor.png",
+      "png48": "png/48/node-to-node-anchor.png",
+      "png96": "png/96/node-to-node-anchor.png"
     }
   ]
 }

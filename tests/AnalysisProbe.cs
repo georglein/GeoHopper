@@ -182,13 +182,87 @@ internal static class AnalysisProbe
         Check("Legacy defaults remain gravity and no plate refinement",Demo().Analysis.Phases[0].InitialMethod=="Gravity loading" && Demo().Analysis.Mesh.RefinePlates.Count==0);
     }
 
+
+    /// <summary>Synthetic five-region excavation with two struts, installation, deeper excavation and removal.</summary>
+    internal static ModelData StrutDemo()
+    {
+        var soil=Soil();
+        var regions=new[]{new RegionData("LeftSoil",Box(-3,-6,2,6),soil),new RegionData("DeepSoil",Box(-1,-6,2,4),soil),
+            new RegionData("Cut2",Box(-1,-2,2,1),soil),new RegionData("Cut",Box(-1,-1,2,1),soil),new RegionData("RightSoil",Box(1,-6,2,6),soil)};
+        var plates=ExcavationDemo().Plates;
+        var contacts=new System.Collections.Generic.List<InterfaceData>();
+        foreach(var p in plates)
+        {
+            var levels=new[]{-4.0,-2.0,-1.0,0.0}; var hosts=new[]{"DeepSoil","Cut2","Cut"};
+            for(int i=0;i<3;i++)
+            {
+                var segment=new SegmentData(new XY(p.Segment.A.X,levels[i]),new XY(p.Segment.A.X,levels[i+1]));
+                contacts.Add(new InterfaceData(p.Id+"Outer"+i,segment,p,p.Id=="Left"?"LeftSoil":"RightSoil",soil,true,.67));
+                contacts.Add(new InterfaceData(p.Id+"Inner"+i,segment,p,hosts[i],soil,false,.67));
+            }
+        }
+        var material=new AnchorMaterialData("StrutSteel",2.1e9,3,0);
+        var anchors=new[]{new AnchorData("Strut1",new SegmentData(new XY(-1,-.5),new XY(1,-.5)),material,"Left","Right"),
+            new AnchorData("Strut2",new SegmentData(new XY(-1,-.75),new XY(1,-.75)),material,"Left","Right")};
+        var all=regions.Select(p=>p.Id).ToArray(); var plateIds=plates.Select(p=>p.Id).ToArray();
+        var afterFirst=all.Where(id=>id!="Cut").ToArray(); var afterSecond=afterFirst.Where(id=>id!="Cut2").ToArray();
+        var firstContacts=contacts.Where(c=>c.RegionA!="Cut").Select(c=>c.Id).ToArray();
+        var secondContacts=contacts.Where(c=>c.RegionA!="Cut" && c.RegionA!="Cut2").Select(c=>c.Id).ToArray();
+        var anchorIds=anchors.Select(a=>a.Id).ToArray();
+        var phases=new[]{new PhaseData("Initial","",all,null,null,false,null,"K0 procedure"),
+            new PhaseData("Install","Initial",all,contacts.Select(c=>c.Id),null,true,plateIds),
+            new PhaseData("Excavate","Install",afterFirst,firstContacts,null,false,plateIds),
+            new PhaseData("Struts","Excavate",afterFirst,firstContacts,null,false,plateIds,"Gravity loading",anchorIds),
+            new PhaseData("Deepen","Struts",afterSecond,secondContacts,null,false,plateIds,"Gravity loading",anchorIds),
+            new PhaseData("Remove","Deepen",afterSecond,secondContacts,null,false,plateIds,"Gravity loading",new[]{"Strut2"})};
+        return new ModelData("AnalysisDemo",regions,0,contacts,null,phases,new MeshData(.5,null,1,plateIds),plates,anchors);
+    }
+    /// <summary>Checks discrete-anchor units, support references, identity and activation constraints.</summary>
+    private static void AnchorCore()
+    {
+        var model=StrutDemo(); var a=model.Anchors[0]; var m=a.Material;
+        Check("Anchor EA is per element and spacing is separate",m.Command().Contains("\"EA\" 2100000000") && m.Command().Contains("\"LSpacing\" 3"));
+        Check("Anchor uses native n2n command",a.Command().StartsWith("n2nanchor "));
+        Check("Strut installation is later than first excavation",model.Analysis.Phases[2].Anchors.Count==0 && model.Analysis.Phases[3].Anchors.Count==2);
+        Check("Deeper excavation preserves struts and removes cut",model.Analysis.Phases[4].Anchors.Count==2 && !model.Analysis.Phases[4].Regions.Contains("Cut2"));
+        Check("Legacy models have no anchors",Demo().Anchors.Count==0 && Demo().Analysis.Phases.All(p=>p.Anchors.Count==0));
+        Reject("Zero anchor EA rejected",()=>new AnchorMaterialData("X",0,1,0));
+        Reject("Nonfinite anchor EA rejected",()=>new AnchorMaterialData("X",Double.NaN,1,0));
+        Reject("Zero spacing rejected",()=>new AnchorMaterialData("X",1,0,0));
+        Reject("Infinite spacing rejected",()=>new AnchorMaterialData("X",1,Double.PositiveInfinity,0));
+        Reject("Missing anchor material rejected",()=>new AnchorData("X",a.Segment,null));
+        Reject("Missing anchor segment rejected",()=>new AnchorData("X",null,m));
+        Reject("Initial anchors rejected",()=>new PhaseData("Initial","",new[]{"LeftSoil"},null,null,false,null,"Gravity loading",new[]{"Strut1"}));
+        Reject("Duplicate active anchor IDs rejected",()=>new PhaseData("X","Initial",new[]{"LeftSoil"},null,null,false,null,"Gravity loading",new[]{"Strut1","strut1"}));
+        Reject("Duplicate anchor IDs rejected",()=>new ModelData("X",model.Regions,0,plates:model.Plates,anchors:new[]{a,a}));
+        Reject("Reversed overlapping anchor rejected",()=>new ModelData("X",model.Regions,0,plates:model.Plates,anchors:new[]{a,new AnchorData("Other",new SegmentData(a.Segment.B,a.Segment.A),m)}));
+        Reject("Unknown attachment plate rejected",()=>new ModelData("X",model.Regions,0,plates:model.Plates,anchors:new[]{new AnchorData("X",a.Segment,m,"Unknown","Right")}));
+        Reject("Endpoint off named plate rejected",()=>new ModelData("X",model.Regions,0,plates:model.Plates,anchors:new[]{new AnchorData("X",a.Segment,m,"Right","Left")}));
+        Reject("Anchor outside contour rejected",()=>new ModelData("X",model.Regions,0,anchors:new[]{new AnchorData("X",new SegmentData(new XY(-4,0),new XY(1,0)),m)}));
+        Reject("Conflicting anchor material definitions rejected",()=>new ModelData("X",model.Regions,0,plates:model.Plates,anchors:new[]{a,new AnchorData("X",model.Anchors[1].Segment,new AnchorMaterialData(m.Id,m.EA,4,0))}));
+        Reject("Anchor and soil material ID collision rejected",()=>new ModelData("X",model.Regions,0,anchors:new[]{new AnchorData("X",a.Segment,new AnchorMaterialData("Soil",1,1,0))}));
+        Reject("Anchor and plate material ID collision rejected",()=>new ModelData("X",model.Regions,0,plates:model.Plates,anchors:new[]{new AnchorData("X",a.Segment,new AnchorMaterialData(model.Plates[0].Material.Id,1,1,0))}));
+        var phases=model.Analysis.Phases.ToArray();
+        phases[3]=new PhaseData("Struts","Excavate",phases[3].Regions,phases[3].Interfaces,null,false,phases[3].Plates,"Gravity loading",new[]{"Missing"});
+        Reject("Unknown active anchor rejected",()=>new AnalysisData(model.Regions,model.Analysis.Interfaces,null,phases,model.Analysis.Mesh,model.Plates,model.Anchors));
+        var inactiveSupport=new PhaseData("X","Initial",model.Analysis.Phases[0].Regions,null,null,false,new[]{"Left"});
+        Reject("Active anchor requires declared supporting plates",()=>a.ValidatePhase(inactiveSupport));
+        var unbound=new ModelData("X",model.Regions,0,anchors:new[]{new AnchorData("X",a.Segment,m)});
+        Check("Generic geometry-only anchor may omit plate references",unbound.Anchors.Count==1 && unbound.Analysis==null);
+        var changed=new ModelData("X",model.Regions,0,anchors:new[]{new AnchorData("X",a.Segment,new AnchorMaterialData(m.Id,m.EA,4,0))});
+        Check("Spacing changes invalidate model fingerprint",unbound.Fingerprint!=changed.Fingerprint);
+        Check("Anchor activation changes invalidate phase signature",model.Analysis.Phases[3].Signature()!=new PhaseData("Struts","Excavate",model.Analysis.Phases[3].Regions,model.Analysis.Phases[3].Interfaces,null,false,model.Analysis.Phases[3].Plates).Signature());
+        var attached=new ModelData("X",model.Regions,0,plates:model.Plates,anchors:new[]{a});
+        Check("Optional support references participate in signatures",a.Signature()!=new AnchorData(a.Id,a.Segment,m).Signature() && attached.Anchors.Count==1);
+    }
+
     /// <summary>Runs core assertions or a build/solve sequence against an isolated server.</summary>
     public static int Main(string[] args)
     {
-        if(args.Length==0) { Core(); PlateCore(); ExcavationCore(); return 0; }
+        if(args.Length==0) { Core(); PlateCore(); ExcavationCore(); AnchorCore(); return 0; }
         Console.InputEncoding=new System.Text.UTF8Encoding(false);
         var connection=new ConnectionData("127.0.0.1",Int32.Parse(args[0]),Console.ReadLine());
-        var build=ModelBuilder.BuildAsync(args[2]=="excavation"?ExcavationDemo():args[2]=="plates"?PlateDemo():Demo(),connection,args[1],s=>{}).GetAwaiter().GetResult();
+        var build=ModelBuilder.BuildAsync(args[2]=="struts"?StrutDemo():args[2]=="excavation"?ExcavationDemo():args[2]=="plates"?PlateDemo():Demo(),connection,args[1],s=>{}).GetAwaiter().GetResult();
         CalculationResult calc=null;
         if(build.Success && build.Receipt!=null)
         {

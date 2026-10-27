@@ -11,6 +11,6 @@ namespace GeoHopper
     public static class VersionInfo
     {
         /// <summary>Four-part .NET version. Increase for every published user-facing release.</summary>
-        public const string Number = "0.6.0.0";
+        public const string Number = "0.7.0.0";
     }
 }

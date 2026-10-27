@@ -67,13 +67,13 @@ class Handler(BaseHTTPRequestHandler):
             if verb == "gotostages":
                 # Geometry feature GUIDs are replaced by staged SourceFeature handles.
                 state["staged"] = {name: str(uuid.uuid4()) for name in state["names"].values()
-                                   if name.startswith(("GH_R_", "GH_I_", "GH_L_", "GH_Plate_"))}
+                                   if name.startswith(("GH_R_", "GH_I_", "GH_L_", "GH_Plate_", "GH_Anchor_"))}
             if verb == "save" and cmd != "save":
                 state["file"] = cmd[len("save "):].strip('"')
             if verb == "rename":
                 _, guid, name = cmd.split(" ", 2)
                 state["names"][guid] = name.strip('"')
-            types = {"platemat": ["PlateMat"], "plate": ["Line", "Plate"], "soilmat": ["SoilMat"], "polygon": ["Polygon", "Soil"],
+            types = {"anchormat": ["AnchorMat"], "n2nanchor": ["Line", "NodeToNodeAnchor"], "platemat": ["PlateMat"], "plate": ["Line", "Plate"], "soilmat": ["SoilMat"], "polygon": ["Polygon", "Soil"],
                      "posinterface": ["Line", "PositiveInterface"],
                      "neginterface": ["Line", "NegativeInterface"],
                      "lineload": ["Line", "LineLoad"], "phase": ["Phase"]}
@@ -175,6 +175,23 @@ if __name__ == "__main__":
             check("Line refinement failure stops before mesh and calculation", not r["BuildSuccess"] and not any(c.startswith(("meshd ","calculate ")) for c in commands))
             r = run(server.server_port, folder, mode="excavation", fail_command="neginterface")
             check("Negative interface failure stops before meshing", not r["BuildSuccess"] and not any(c.startswith("meshd ") for c in commands))
+            r = run(server.server_port, folder, mode="struts")
+            check("Strut installation and deeper excavation complete", r["BuildSuccess"] and r["Success"] and len(r["Status"]) == 6)
+            check("Shared anchor material is created once", sum(c.startswith("anchormat ") for c in commands) == 1)
+            check("Anchor material retains per-element EA and spacing", any(c.startswith("anchormat ") and '"EA" 2100000000' in c and '"LSpacing" 3' in c for c in commands))
+            geometry_anchors = {g for g,t in state["types"].items() if t == "NodeToNodeAnchor"}
+            check("Both anchors assigned their native material", sum(c.startswith("setmaterial ") and c.split()[1] in geometry_anchors for c in commands) == 2)
+            staged_anchors = {g for n,g in state["staged"].items() if n.startswith("GH_Anchor_")}
+            check("Each phase deactivates all staged anchors first", sum(c.startswith("deactivate ") and c.split()[1] in staged_anchors for c in commands) == 12)
+            check("Prestress adjustment disabled explicitly for every anchor phase", sum('"AdjustPrestress"' in c and c.endswith(" False") for c in commands) == 12)
+            activated = [(c.split()[1],state["names"][c.split()[2]]) for c in commands if c.startswith("activate ") and c.split()[1] in staged_anchors]
+            check("Anchors activate only at installation and later", len(activated) == 5 and [n for _,n in activated] == ["GH_Phase_Struts","GH_Phase_Struts","GH_Phase_Deepen","GH_Phase_Deepen","GH_Phase_Remove"])
+            check("Removed strut stays inactive in final snapshot", activated[-1][0] == state["staged"]["GH_Anchor_Strut2"])
+            deeper = next(g for g,n in state["names"].items() if n == "GH_Phase_Deepen")
+            check("Second excavation volume stays inactive", not any(c == "activate " + state["staged"]["GH_R_Cut2"] + " " + deeper for c in commands))
+            for verb in ("anchormat", "n2nanchor"):
+                r = run(server.server_port, folder, mode="struts", fail_command=verb)
+                check(verb + " failure stops before meshing and solve", not r["BuildSuccess"] and not r["HasReceipt"] and not any(c.startswith(("meshd ","calculate ")) for c in commands))
             r = run(server.server_port, folder, fail_phase="GH_Phase_Install")
             check("Native failed phase stops descendants", not r["Success"] and "Controlled convergence failure" in r["Error"] and sum(c.startswith("calculate ") for c in commands) == 2)
             check("Failure retains per-phase status", len(r["Status"]) == 2 and "FAILED" in r["Status"][-1])

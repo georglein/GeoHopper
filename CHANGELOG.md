@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0.0 - Excavation WP3: axial struts (live acceptance pending)
+
+- Add Anchor Material (EA per element and spacing) and Node-to-Node Anchor with line preview.
+- Append Model.Anchors and Phase.Active anchors while preserving existing ports and GUIDs.
+- Validate optional endpoint plate references, phase supports, IDs/materials and overlap.
+- Create shared AnchorMat sets, assign native anchors and resolve staged activation handles.
+- Explicitly disable prestress adjustment; this package is elastic and unprestressed.
+- Add two embedded icons, core/transfer tests and a joint strut/deeper-excavation test guide.
+- Anchor force extraction, capacity, buckling and prestressed ground anchors are not included.
+- WP2 calculation and WP3 native acceptance remain pending; no convergence claim is made.
+
 ## 0.6.0.0 - Excavation WP2 (live acceptance pending)
 
 - Add Plate Interface for segmented contacts between a plate and a named soil region.

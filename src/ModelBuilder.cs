@@ -136,9 +136,25 @@ namespace GeoHopper
                         plateGuids.Add(plate.Id,feature);
                         mapping.Add(plate.Id+" -> GH_Plate_"+plate.Id+" | "+plate.Material.Id);
                     }
+                    var anchorGuids=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
+                    var anchorMaterials=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
+                    foreach(var anchor in model.Anchors)
+                    {
+                        if(!anchorMaterials.ContainsKey(anchor.Material.Id))
+                        {
+                            report("Creating anchor material "+anchor.Material.Id+"...");
+                            anchorMaterials.Add(anchor.Material.Id,Created(await Command(http,connection.Password,anchor.Material.Command()).ConfigureAwait(false),"AnchorMat"));
+                        }
+                        report("Creating node-to-node anchor "+anchor.Id+"...");
+                        string feature=Created(await Command(http,connection.Password,anchor.Command()).ConfigureAwait(false),"NodeToNodeAnchor");
+                        await Command(http,connection.Password,"setmaterial "+feature+" "+anchorMaterials[anchor.Material.Id]).ConfigureAwait(false);
+                        await Command(http,connection.Password,"rename "+feature+" "+Rules.Quote("GH_Anchor_"+anchor.Id)).ConfigureAwait(false);
+                        anchorGuids.Add(anchor.Id,feature);
+                        mapping.Add(anchor.Id+" -> GH_Anchor_"+anchor.Id+" | "+anchor.Material.Id);
+                    }
                     List<string> phaseGuids=null;
                     if(model.Analysis!=null)
-                        phaseGuids=await PrepareAnalysis(http,connection.Password,model,soils,polygons,plateGuids,plateLines,report).ConfigureAwait(false);
+                        phaseGuids=await PrepareAnalysis(http,connection.Password,model,soils,polygons,plateGuids,plateLines,anchorGuids,report).ConfigureAwait(false);
                     report("Saving completed model...");
                     await Command(http,connection.Password,"save "+Rules.Quote(targetFile)).ConfigureAwait(false);
                     result.ProjectFile=targetFile;

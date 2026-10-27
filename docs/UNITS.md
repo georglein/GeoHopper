@@ -91,3 +91,15 @@ Plate Interface segments follow Rhino document units and convert to metres. Rint
 K0 are dimensionless. K0 is currently derived by PLAXIS automatic material determination;
 no manual K0 input is exposed. Plate-line refinement shares Refinement passes with region
 refinement and occurs before meshd using the SI element-size setting.
+
+## Discrete anchors and struts (0.7.0.0)
+
+Anchor Material.EA is N per individual element. LSpacing is metres out of plane and is
+transmitted independently. For an axial element with length L [m], EA/L has units N/m.
+Do not enter EA/L into EA and do not divide EA by LSpacing before transfer. PLAXIS handles
+the per-metre plane-strain contribution of spaced anchors. Plate EA remains N/m out of
+plane; the two material types deliberately have different input units.
+
+Example only: E=210e9 Pa and A=0.01 m2 give EA=2.1e9 N. At L=8 m, EA/L=262.5e6 N/m
+per individual element. Spacing=3 m is a separate physical input. Geometry follows Rhino
+units; numeric EA and spacing do not. Node-to-Node Anchor.Length always reports metres.

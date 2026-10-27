@@ -127,10 +127,10 @@ namespace GeoHopper
     internal sealed class PhaseData
     {
         internal readonly string Id,Parent,InitialMethod;
-        internal readonly ReadOnlyCollection<string> Regions,Interfaces,Loads,Plates;
+        internal readonly ReadOnlyCollection<string> Regions,Interfaces,Loads,Plates,Anchors;
         internal readonly bool ResetDisplacements;
         /// <summary>Validates identifiers and copies lists so later GH solutions cannot mutate running jobs.</summary>
-        internal PhaseData(string id,string parent,IEnumerable<string> regions,IEnumerable<string> interfaces,IEnumerable<string> loads,bool reset,IEnumerable<string> plates=null,string initialMethod="Gravity loading")
+        internal PhaseData(string id,string parent,IEnumerable<string> regions,IEnumerable<string> interfaces,IEnumerable<string> loads,bool reset,IEnumerable<string> plates=null,string initialMethod="Gravity loading",IEnumerable<string> anchors=null)
         {
             Id=Rules.Id(id); Parent=String.IsNullOrWhiteSpace(parent)?"":Rules.Id(parent.Trim());
             if(initialMethod!="Gravity loading" && initialMethod!="K0 procedure")
@@ -138,10 +138,10 @@ namespace GeoHopper
             if(Parent!="" && initialMethod!="Gravity loading")
                 throw new ArgumentException("Set Initial method only on the initial phase; leave its default on child phases.");
             InitialMethod=initialMethod;
-            Regions=Ids(regions); Interfaces=Ids(interfaces); Loads=Ids(loads); Plates=Ids(plates); ResetDisplacements=reset;
+            Regions=Ids(regions); Interfaces=Ids(interfaces); Loads=Ids(loads); Plates=Ids(plates); Anchors=Ids(anchors); ResetDisplacements=reset;
             if(Regions.Count==0) throw new ArgumentException("Each phase needs at least one active region.");
-            if(Parent=="" && (reset || Interfaces.Count>0 || Loads.Count>0 || Plates.Count>0))
-                throw new ArgumentException("The initial gravity phase must not reset displacements or activate contacts/loads/plates.");
+            if(Parent=="" && (reset || Interfaces.Count>0 || Loads.Count>0 || Plates.Count>0 || Anchors.Count>0))
+                throw new ArgumentException("The initial phase must not reset displacements or activate contacts/loads/plates/anchors.");
         }
         /// <summary>Normalizes an optional list, rejecting duplicates and unsafe identifiers.</summary>
         internal static ReadOnlyCollection<string> Ids(IEnumerable<string> values)
@@ -151,7 +151,7 @@ namespace GeoHopper
             return list.AsReadOnly();
         }
         /// <summary>Captures the complete activation state, rather than only changes from a parent.</summary>
-        internal string Signature() { return Id+"|"+Parent+"|"+String.Join(",",Regions)+"|"+String.Join(",",Interfaces)+"|"+String.Join(",",Loads)+"|"+ResetDisplacements+"|"+String.Join(",",Plates)+"|"+InitialMethod; }
+        internal string Signature() { return Id+"|"+Parent+"|"+String.Join(",",Regions)+"|"+String.Join(",",Interfaces)+"|"+String.Join(",",Loads)+"|"+ResetDisplacements+"|"+String.Join(",",Plates)+"|"+InitialMethod+"|"+String.Join(",",Anchors); }
         /// <inheritdoc/>
         public override string ToString() { return Id+" | "+(Parent==""?"Initial "+InitialMethod:"Plastic, parent "+Parent); }
     }
@@ -184,7 +184,7 @@ namespace GeoHopper
         internal readonly MeshData Mesh;
         /// <summary>Rejects invalid references, duplicate features, phase cycles and contacts without both active regions.</summary>
         internal AnalysisData(IList<RegionData> regions,IEnumerable<InterfaceData> interfaces,IEnumerable<LoadData> loads,
-            IEnumerable<PhaseData> phases,MeshData mesh,IEnumerable<PlateData> plates=null)
+            IEnumerable<PhaseData> phases,MeshData mesh,IEnumerable<PlateData> plates=null,IEnumerable<AnchorData> anchors=null)
         {
             if(mesh==null) throw new ArgumentException("Analysis requires Mesh Settings.");
             Mesh=mesh;
@@ -223,12 +223,14 @@ namespace GeoHopper
             var im=ints.ToDictionary(x=>x.Id,StringComparer.OrdinalIgnoreCase);
             var lm=lds.ToDictionary(x=>x.Id,StringComparer.OrdinalIgnoreCase);
             var plateIds=new HashSet<string>((plates??Enumerable.Empty<PlateData>()).Select(p=>p.Id),StringComparer.OrdinalIgnoreCase);
+            var anchorMap=(anchors??Enumerable.Empty<AnchorData>()).ToDictionary(a=>a.Id,StringComparer.OrdinalIgnoreCase);
             var pm=phs.ToDictionary(x=>x.Id,StringComparer.OrdinalIgnoreCase);
             foreach(var p in phs)
             {
                 foreach(var id in p.Regions) Require(reg,id,"active region");
                 foreach(var id in p.Plates)
                     if(!plateIds.Contains(id)) throw new ArgumentException("Unknown active plate: "+id);
+                foreach(var id in p.Anchors) Require(anchorMap,id,"active anchor").ValidatePhase(p);
                 if(p.Parent!="") Require(pm,p.Parent,"parent phase");
                 foreach(var id in p.Interfaces)
                 {

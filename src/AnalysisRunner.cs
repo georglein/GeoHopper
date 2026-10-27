@@ -41,7 +41,7 @@ namespace GeoHopper
 
         /// <summary>Creates custom contacts and uniform loads, generates the mesh and prepares dry staged phases.</summary>
         private static async Task<List<string>> PrepareAnalysis(HttpClient http,string password,ModelData model,
-            Dictionary<string,string> soilGuids,Dictionary<string,string> polygonGuids,Dictionary<string,string> plateGuids,Dictionary<string,string> plateLines,Action<string> report)
+            Dictionary<string,string> soilGuids,Dictionary<string,string> polygonGuids,Dictionary<string,string> plateGuids,Dictionary<string,string> plateLines,Dictionary<string,string> anchorGuids,Action<string> report)
         {
             var analysis=model.Analysis;
             var interfaces=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
@@ -86,6 +86,8 @@ namespace GeoHopper
                 loads[id]=await Named(http,password,"GH_L_"+id).ConfigureAwait(false);
             foreach(var id in plateGuids.Keys.ToList())
                 plateGuids[id]=await Named(http,password,"GH_Plate_"+id).ConfigureAwait(false);
+            foreach(var id in anchorGuids.Keys.ToList())
+                anchorGuids[id]=await Named(http,password,"GH_Anchor_"+id).ConfigureAwait(false);
             var phases=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
             var result=new List<string>();
             foreach(var phase in analysis.Phases)
@@ -116,11 +118,19 @@ namespace GeoHopper
                 }
                 foreach(var item in plateGuids)
                     await Command(http,password,"deactivate "+item.Value+" "+guid).ConfigureAwait(false);
+                foreach(var item in anchorGuids)
+                {
+                    await Command(http,password,"deactivate "+item.Value+" "+guid).ConfigureAwait(false);
+                    // WP3 is unprestressed: never inherit a prestress adjustment from another phase.
+                    await Command(http,password,"setproperties "+item.Value+" \"AdjustPrestress\" "+guid+" False").ConfigureAwait(false);
+                }
                 report("Preparing phase "+phase.Id+": applying activation snapshot...");
                 foreach(var id in phase.Regions)
                     await Command(http,password,"activate "+soilGuids[id]+" "+guid).ConfigureAwait(false);
                 foreach(var id in phase.Plates)
                     await Command(http,password,"activate "+plateGuids[id]+" "+guid).ConfigureAwait(false);
+                foreach(var id in phase.Anchors)
+                    await Command(http,password,"activate "+anchorGuids[id]+" "+guid).ConfigureAwait(false);
                 foreach(var id in phase.Interfaces)
                     await Command(http,password,"activate "+interfaces[id]+" "+guid).ConfigureAwait(false);
                 foreach(var id in phase.Loads)

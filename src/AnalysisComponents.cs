@@ -104,6 +104,7 @@ namespace GeoHopper
             p.AddBooleanParameter("Reset displacements","Reset","Reset at this phase start; normally true only just after gravity initialization",GH_ParamAccess.item,false);
             p.AddTextParameter("Active plates","Plates","Full list of active plate IDs; empty means all plates inactive",GH_ParamAccess.list); p[6].Optional=true;
             p.AddTextParameter("Initial method","Initial","Initial phase only: Gravity loading or K0 procedure. K0 supports dry horizontal soil layers.",GH_ParamAccess.item,"Gravity loading");
+            p.AddTextParameter("Active anchors","Anchors","Full list of active anchor IDs; omitted anchors are inactive",GH_ParamAccess.list); p[8].Optional=true;
         }
         /// <inheritdoc/>
         protected override void RegisterOutputParams(GH_OutputParamManager p)
@@ -117,7 +118,8 @@ namespace GeoHopper
                 d.GetData(1,ref parent); d.GetDataList(3,contacts); d.GetDataList(4,loads);
                 var plates=new List<string>(); d.GetDataList(6,plates);
                 string method="Gravity loading"; d.GetData(7,ref method);
-                var phase=new PhaseData(id,parent,regions,contacts,loads,reset,plates,method);
+                var anchors=new List<string>(); d.GetDataList(8,anchors);
+                var phase=new PhaseData(id,parent,regions,contacts,loads,reset,plates,method,anchors);
                 d.SetData(0,new DefinitionGoo<PhaseData>(phase)); d.SetData(1,phase.Id);
             } catch(Exception ex) { Report(ex); }
         }

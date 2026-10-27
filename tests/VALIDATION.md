@@ -1,6 +1,6 @@
 # Validation scope
 
-The release build runs 210 automated assertions covering geometry/material validation,
+The release build runs 248 automated assertions covering geometry/material validation,
 analysis phases, encrypted Input/Output protocol handling, sampled results and numerical
 metrics. Icon dimensions and embedded resource presence are also checked during build.
 
@@ -38,3 +38,16 @@ failure propagation. All 18 component icons are embedded.
 These are core and encrypted protocol-double checks. Native positive/negative side mapping,
 mesh behavior, K0 property acceptance and physical excavation convergence remain pending
 joint live acceptance in docs/WP2-EXCAVATION-TEST.md. No live PLAXIS model was modified.
+
+## Excavation WP3 (0.7.0.0)
+
+The full build passed 248 assertions, including 38 new anchor core/transfer checks.
+All 20 component icons are embedded. Existing component GUIDs remain unchanged.
+Coverage includes per-anchor stiffness and spacing, material deduplication, endpoint
+attachment validation, activation snapshots, staged object resolution, explicit disabling
+of prestress adjustment, removal in later phases, and native-command failure propagation.
+
+Native command names and properties were checked against the installed PLAXIS command
+reference. Automated tests use protocol doubles; they do not confirm native property
+acceptance, element connectivity or physical convergence. Joint WP2 and WP3 calculation
+acceptance remains pending. See docs/WP3-STRUTS-TEST.md. No live model was modified.

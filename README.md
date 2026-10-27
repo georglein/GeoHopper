@@ -12,7 +12,7 @@ analysis, and read selected displacements and material quantities back into your
 parametric workflow. The connection uses the local encrypted scripting API directly:
 no Python backend or JSON exchange files are needed at runtime.
 
-Current development version: **0.6.0.0** (excavation support awaiting live acceptance). This is a prototype, not a validated design tool.
+Current development version: **0.7.0.0** (strut and excavation workflow awaiting live acceptance). This is a prototype, not a validated design tool.
 Rhino and PLAXIS are separate proprietary products and are not included.
 GeoHopper is an independent project, not an official Seequent, Bentley or McNeel product.
 
@@ -25,6 +25,8 @@ GeoHopper is an independent project, not an official Seequent, Bentley or McNeel
 | Material - Mohr-Coulomb | Define drained soil properties |
 | Plate Material | Define isotropic elastic plate section stiffness and weight |
 | Plate | Define a straight structural plate with material-coloured preview |
+| Anchor Material | Define elastic axial rigidity per element and out-of-plane spacing |
+| Node-to-Node Anchor | Define a straight axial connection with optional plate attachment checks |
 | Region | Assign a material to a closed XY polygon and preview it |
 | Model | Assemble and validate the model definition |
 | Interface | Define contact between two continuum regions |

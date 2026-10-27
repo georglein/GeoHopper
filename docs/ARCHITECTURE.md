@@ -145,3 +145,18 @@ All new settings participate in immutable signatures and stale-result invalidati
 
 Reference checked: installed PLAXIS 2D 2025.1 refine command and Plate/Line objects;
 [material property compatibility](https://bentleysystems.service-now.com/community?id=kb_article&sysparm_article=KB0108381).
+
+## Axial elements (0.7.0.0)
+
+AnchorData.cs holds Rhino-independent AnchorMaterialData and AnchorData. AnchorComponents.cs
+provides the editors and line preview. Model owns optional anchors; Phase owns complete
+anchor activation IDs. Optional plate references are validated geometrically and per phase.
+Plate/soil/contact/anchor material names must not collide. Anchor signatures include EA,
+spacing, geometry and references. Legacy models default to no anchors.
+
+ModelBuilder creates anchors before contacts/mesh, assigns returned native objects and uses
+GH_Anchor_<ID> names. AnalysisRunner resolves staged SourceFeature handles and disables
+prestress adjustment explicitly. No automatic retries, optimizer loop or external backend
+is introduced. The installed 2025.1 AnchorMat, NodetoNodeAnchor, anchormat and n2nanchor
+references define EA [Force], LSpacing [Length] and the native property/command names.
+The protocol tests do not replace native phase/property and structural-connectivity checks.

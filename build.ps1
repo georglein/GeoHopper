@@ -73,7 +73,7 @@ Copy-Item -LiteralPath (Join-Path $projectRoot 'lib\BouncyCastle.LICENSE.md') -D
 $argsForModel = @('/nologo', '/target:exe', '/optimize+', '/warn:4', '/warnaserror+',
     '/reference:System.Net.Http.dll', '/reference:System.Web.Extensions.dll',
     ('/reference:' + $crypto), ('/out:' + (Join-Path $stage 'ModelProbe.exe'))) +
-    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
+    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'AnchorData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
     @((Join-Path $projectRoot 'tests\ModelProbe.cs'))
 & $compiler @argsForModel
 if ($LASTEXITCODE -ne 0) { throw 'Model probe compilation failed. dist was not changed.' }
@@ -82,7 +82,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Model core tests failed. dist was not changed.
 $argsForAnalysis = @('/nologo', '/target:exe', '/optimize+', '/warn:4', '/warnaserror+',
     '/reference:System.Net.Http.dll', '/reference:System.Web.Extensions.dll',
     ('/reference:' + $crypto), ('/out:' + (Join-Path $stage 'AnalysisProbe.exe'))) +
-    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
+    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'AnchorData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
     @((Join-Path $projectRoot 'tests\AnalysisProbe.cs'))
 & $compiler @argsForAnalysis
 if ($LASTEXITCODE -ne 0) { throw 'Analysis probe compilation failed. dist was not changed.' }
@@ -91,7 +91,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Analysis core tests failed. dist was not chang
 $argsForResults = @('/nologo', '/target:exe', '/optimize+', '/warn:4', '/warnaserror+', '/main:ResultsProbe',
     '/reference:System.Net.Http.dll', '/reference:System.Web.Extensions.dll',
     ('/reference:' + $crypto), ('/out:' + (Join-Path $stage 'ResultsProbe.exe'))) +
-    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
+    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'AnchorData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
     @((Join-Path $projectRoot 'tests\AnalysisProbe.cs'), (Join-Path $projectRoot 'tests\ResultsProbe.cs'))
 & $compiler @argsForResults
 if ($LASTEXITCODE -ne 0) { throw 'Results probe compilation failed. dist was not changed.' }
