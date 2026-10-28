@@ -82,3 +82,10 @@ listable result path with bounded slicing and seven regression assertions.
 Build: all 296 assertions passed. Installed 0.8.0.1 with Rhino closed.
 Previous release backup: artifacts/backups/20261028-221814-602.
 Native read acceptance remains pending.
+
+## Demo acceptance and source publication
+
+The maintainer reported the 0.8.0.1 demo workflow working in the joint Grasshopper test.
+Detailed numerical comparisons and engineering validation are not documented as complete.
+The maintainer authorized publishing plugin source, icons, tests and documentation to
+GitHub. Private GH/Rhino/PLAXIS models remain excluded; example folders are placeholders.

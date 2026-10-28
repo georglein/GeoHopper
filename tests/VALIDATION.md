@@ -96,3 +96,9 @@ rejected the getresults object envelope. The installed scripting wrapper support
 listable result objects through count/sublist. Seven new transfer assertions cover
 plate and anchor list handles, JSON scalar items, failed/truncated/oversized lists and
 late nonnumeric values. Native end-to-end acceptance of this compatibility fix is pending.
+
+## Maintainer demo feedback
+
+After installing 0.8.0.1, the maintainer reported the demo working in Grasshopper.
+This records an initial live workflow check, not a completed quantitative comparison
+of every structural result or an independent engineering validation.
