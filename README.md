@@ -8,11 +8,11 @@
 
 GeoHopper is an early-stage C# plugin for Rhino 7 / Grasshopper. Define geometry,
 materials, contacts, loads and construction phases in Grasshopper, run a PLAXIS
-analysis, and read selected displacements and material quantities back into your
+analysis, and read displacements, structural forces and material quantities back into your
 parametric workflow. The connection uses the local encrypted scripting API directly:
 no Python backend or JSON exchange files are needed at runtime.
 
-Current development version: **0.7.0.2** (strut and excavation workflow awaiting live acceptance). This is a prototype, not a validated design tool.
+Current development version: **0.8.0.0** (structural results awaiting live acceptance). This is a prototype, not a validated design tool.
 Rhino and PLAXIS are separate proprietary products and are not included.
 GeoHopper is an independent project, not an official Seequent, Bentley or McNeel product.
 
@@ -40,6 +40,9 @@ GeoHopper is an independent project, not an official Seequent, Bentley or McNeel
 | Read Results | Return point displacements and settlement |
 | Chord Rotation | Measure orientation change between two sampled points |
 | Material Quantity | Calculate section area and extruded material volume |
+| Plate Results | Read plate nodal displacement, axial/shear force and bending moment |
+| Anchor Results | Read force per discrete anchor and equivalent force per width |
+| Plate Deformation Preview | Display original and exaggerated deformed plate lines |
 
 See the [component catalogue](docs/COMPONENTS.md) for ports and units.
 

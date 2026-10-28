@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.0.0
+
+- Add Plate Results for native nodal coordinates, Ux/Uy, Nx2D, Q2D and M2D.
+- Add Anchor Results using the modern NodeToNodeAnchor.N field (force per anchor).
+  Equivalent force per width is derived by dividing by model anchor spacing.
+- Add Plate Deformation Preview with explicit scaling and Rhino unit conversion.
+- Resolve Output source groups and enumerate their cut elements; validate project,
+  phase, units, source identity, coordinates and complete array lengths.
+- Preserve duplicate force rows and separate native parts; never silently average them.
+- Add three matching icons, English documentation and structural regression coverage.
+- WP3 native acceptance was confirmed by the maintainer; WP4 native acceptance is pending.
+
+
 ## 0.7.0.2
 
 - Apply unprestressed phase settings to generated NodeToNodeAnchors, not SourceFeatures.

@@ -34,14 +34,20 @@ Implemented: Anchor Material, Node-to-Node Anchor, optional plate attachments,
 Model.Anchors and Phase.Active anchors, native transfer/activation and matching icons.
 Build: passed all 248 automated assertions; 20 component icons embedded.
 Local installation: 0.7.0.0 installed with Rhino closed. Previous binaries backed up
-under artifacts/backups/20261027-082529-863. Joint live acceptance: pending.
-WP2 calculation was not explicitly confirmed; verify it before the strut sequence.
+under artifacts/backups/20261027-082529-863. Joint live acceptance: confirmed after 0.7.0.2.
+The maintainer subsequently confirmed the strut workflow succeeds after the anchor correction.
 Follow WP3-STRUTS-TEST.md. No merge to main or GitHub push is part of this package.
 
 ## WP4 - Structural results
 
-Add Plate Results and Anchor Results, explicit units, coordinates and phase identity.
-Compare native results, visualize wall displacement and rerun parameter variations.
+Checkpoint: f2a0e8a. Branch: codex/wp4-structural-results. Candidate: 0.8.0.0.
+WP3 was confirmed working by the maintainer after the 0.7.0.2 correction.
+Implemented Plate Results, Anchor Results and Plate Deformation Preview, with matching
+icons, English documentation and regression tests. Build: 289 assertions passed;
+23 embedded icons verified. Installed 0.8.0.0 with Rhino closed. Prior binaries backed up
+under artifacts/backups/20261028-085141-598.
+Joint native acceptance: pending. Follow WP4-STRUCTURAL-RESULTS-TEST.md.
+No merge or GitHub push is included.
 
 ## Resuming after interruption
 

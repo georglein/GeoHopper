@@ -168,3 +168,24 @@ They do not expose AdjustPrestress. Apply setproperties to NodeToNodeAnchors onc
 phase to configure generated cut elements. This collection-wide operation is intentional:
 Build creates a fresh managed model and all supported anchors are unprestressed.
 Future individual prestress support must resolve cut elements per source anchor.
+
+## Structural results (0.8.0.0)
+
+StructuralResultsData validates active source IDs, holds atomic snapshots and builds
+pure preview vertices. StructuralResultsReader reuses the build/solve lock, receipt,
+Input/Output identity checks and explicit view handoff. It resolves GH_Plate_<ID> or
+GH_Anchor_<ID> in Output, enumerates cut parts using the installed Python wrapper's
+list/count/sublist protocol, and reads aligned getresults node arrays per part.
+It never assumes Input and Output GUIDs are equal or guesses a cut-element suffix.
+Coordinates must lie on the original source segment. Arrays are finite, nonempty,
+equal-length and bounded. All rows are committed only after final project verification.
+StructuralResultsComponents provides two asynchronous readers and a pure preview.
+
+The supported result identifiers are Plate.X/Y/Ux/Uy/Nx2D/Q2D/M2D and
+NodeToNodeAnchor.X/Y/N. Modern anchor N is force per anchor, not the legacy per-width
+example. This workflow targets the installed 2025.1 version; there is no silent legacy
+fallback. Protocol doubles do not establish native Output naming/schema compatibility.
+
+References: installed scripting wrapper list protocol; Reference Manual 9.4.5/9.4.9;
+[Output structural parts](https://bentleysystems.service-now.com/community?id=kb_article_view&sysparm_article=KB0108371);
+[modern result names](https://bentleysystems.service-now.com/community?id=kb_article&sysparm_article=KB0107771).

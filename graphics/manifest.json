@@ -275,6 +275,42 @@
       "png24": "png/24/node-to-node-anchor.png",
       "png48": "png/48/node-to-node-anchor.png",
       "png96": "png/96/node-to-node-anchor.png"
+    },
+    {
+      "id": "plate-results",
+      "title": "Plate Results",
+      "componentClass": "PlateResultsComponent",
+      "category": "Results",
+      "pluginCategory": "Results",
+      "meaning": "Plate Results",
+      "svg": "svg/plate-results.svg",
+      "png24": "png/24/plate-results.png",
+      "png48": "png/48/plate-results.png",
+      "png96": "png/96/plate-results.png"
+    },
+    {
+      "id": "anchor-results",
+      "title": "Anchor Results",
+      "componentClass": "AnchorResultsComponent",
+      "category": "Results",
+      "pluginCategory": "Results",
+      "meaning": "Anchor Results",
+      "svg": "svg/anchor-results.svg",
+      "png24": "png/24/anchor-results.png",
+      "png48": "png/48/anchor-results.png",
+      "png96": "png/96/anchor-results.png"
+    },
+    {
+      "id": "plate-deformation-preview",
+      "title": "Plate Deformation Preview",
+      "componentClass": "PlateDeformationPreviewComponent",
+      "category": "Results",
+      "pluginCategory": "Results",
+      "meaning": "Plate Deformation Preview",
+      "svg": "svg/plate-deformation-preview.svg",
+      "png24": "png/24/plate-deformation-preview.png",
+      "png48": "png/48/plate-deformation-preview.png",
+      "png96": "png/96/plate-deformation-preview.png"
     }
   ]
 }

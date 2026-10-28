@@ -73,7 +73,7 @@ Copy-Item -LiteralPath (Join-Path $projectRoot 'lib\BouncyCastle.LICENSE.md') -D
 $argsForModel = @('/nologo', '/target:exe', '/optimize+', '/warn:4', '/warnaserror+',
     '/reference:System.Net.Http.dll', '/reference:System.Web.Extensions.dll',
     ('/reference:' + $crypto), ('/out:' + (Join-Path $stage 'ModelProbe.exe'))) +
-    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'AnchorData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
+    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'AnchorData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs', 'StructuralResultsData.cs', 'StructuralResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
     @((Join-Path $projectRoot 'tests\ModelProbe.cs'))
 & $compiler @argsForModel
 if ($LASTEXITCODE -ne 0) { throw 'Model probe compilation failed. dist was not changed.' }
@@ -82,7 +82,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Model core tests failed. dist was not changed.
 $argsForAnalysis = @('/nologo', '/target:exe', '/optimize+', '/warn:4', '/warnaserror+',
     '/reference:System.Net.Http.dll', '/reference:System.Web.Extensions.dll',
     ('/reference:' + $crypto), ('/out:' + (Join-Path $stage 'AnalysisProbe.exe'))) +
-    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'AnchorData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
+    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'AnchorData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs', 'StructuralResultsData.cs', 'StructuralResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
     @((Join-Path $projectRoot 'tests\AnalysisProbe.cs'))
 & $compiler @argsForAnalysis
 if ($LASTEXITCODE -ne 0) { throw 'Analysis probe compilation failed. dist was not changed.' }
@@ -91,8 +91,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Analysis core tests failed. dist was not chang
 $argsForResults = @('/nologo', '/target:exe', '/optimize+', '/warn:4', '/warnaserror+', '/main:ResultsProbe',
     '/reference:System.Net.Http.dll', '/reference:System.Web.Extensions.dll',
     ('/reference:' + $crypto), ('/out:' + (Join-Path $stage 'ResultsProbe.exe'))) +
-    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'AnchorData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
-    @((Join-Path $projectRoot 'tests\AnalysisProbe.cs'), (Join-Path $projectRoot 'tests\ResultsProbe.cs'))
+    @('PlaxisClient.cs', 'ModelData.cs', 'PlateData.cs', 'AnchorData.cs', 'InitialStateRules.cs', 'Geometry2D.cs', 'ModelBuilder.cs', 'AnalysisData.cs', 'AnalysisRunner.cs', 'ResultsData.cs', 'ResultsReader.cs', 'StructuralResultsData.cs', 'StructuralResultsReader.cs' | ForEach-Object { Join-Path $projectRoot ('src\' + $_) }) +
+    @((Join-Path $projectRoot 'tests\AnalysisProbe.cs'), (Join-Path $projectRoot 'tests\ResultsProbe.cs'), (Join-Path $projectRoot 'tests\StructuralProbe.cs'))
 & $compiler @argsForResults
 if ($LASTEXITCODE -ne 0) { throw 'Results probe compilation failed. dist was not changed.' }
 & (Join-Path $stage 'ResultsProbe.exe') | Tee-Object -FilePath (Join-Path $stage 'results-core-results.txt')
@@ -117,6 +117,9 @@ try {
     & $PythonPath (Join-Path $projectRoot 'tests\test_results.py') 2>&1 |
         Tee-Object -FilePath (Join-Path $stage 'results-transfer-results.txt')
     if ($LASTEXITCODE -ne 0) { throw 'Results transfer tests failed. dist was not changed.' }
+    & $PythonPath (Join-Path $projectRoot 'tests\test_structural.py') | Tee-Object -FilePath (Join-Path $stage 'structural-transfer-results.txt')
+    if ($LASTEXITCODE -ne 0) { throw 'Structural transfer tests failed. dist was not changed.' }
+
 } finally {
     $env:GEOHOPPER_TEST_PROBE = $previousProbePath
     $env:GEOHOPPER_MODEL_PROBE = $previousModelProbePath

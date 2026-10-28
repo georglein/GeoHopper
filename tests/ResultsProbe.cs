@@ -56,7 +56,8 @@ internal static class ResultsProbe
     /// <summary>Runs core tests or a complete mocked build, solve and result-read workflow.</summary>
     public static int Main(string[] args)
     {
-        if(args.Length==0) { Core(); return 0; }
+        if(args.Length==0) { Core(); StructuralProbe.Core(); return 0; }
+        if(args[2].StartsWith("structural")) return StructuralProbe.Run(args);
         Console.InputEncoding=new System.Text.UTF8Encoding(false);
         var connection=new ConnectionData("127.0.0.1",Int32.Parse(args[0]),Console.ReadLine());
         var build=ModelBuilder.BuildAsync(AnalysisProbe.Demo(),connection,args[1],s=>{}).GetAwaiter().GetResult();

@@ -103,3 +103,17 @@ plane; the two material types deliberately have different input units.
 Example only: E=210e9 Pa and A=0.01 m2 give EA=2.1e9 N. At L=8 m, EA/L=262.5e6 N/m
 per individual element. Spacing=3 m is a separate physical input. Geometry follows Rhino
 units; numeric EA and spacing do not. Node-to-Node Anchor.Length always reports metres.
+
+## Structural Output (0.8.0.0)
+
+Plate X/Y/Ux/Uy are metres; Nx2D and Q2D are N/m; M2D is N m/m.
+Anchor N in the supported 2025.1 workflow is force per individual anchor [N]. The
+additional per-width output divides by spacing [m]. For example, -9000 N at 3 m spacing
+is -3000 N/m, not -27000 N. Preserve native local force signs. Tensile plate axial forces
+are positive; consult the native force diagrams for Q/M and compare anchor signs in Output.
+Do not sum duplicated nodal rows or convert them into an envelope without an explicit rule.
+The reader rejects non-metre or non-newton Output projects instead of silently converting.
+Preview curves are converted into Rhino units; numerical outputs always remain SI.
+
+References: installed PLAXIS 2D 2025.1 Reference Manual, sections 9.4.5 and 9.4.9;
+[2024.1 result-name changes](https://bentleysystems.service-now.com/community?id=kb_article&sysparm_article=KB0107771).

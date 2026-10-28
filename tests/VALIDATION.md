@@ -1,6 +1,6 @@
 # Validation scope
 
-The release build runs 252 automated assertions covering geometry/material validation,
+The release build runs 289 automated assertions covering geometry/material validation,
 analysis phases, encrypted Input/Output protocol handling, sampled results and numerical
 metrics. Icon dimensions and embedded resource presence are also checked during build.
 
@@ -72,3 +72,19 @@ The full build passed 252 assertions. The fixture rejects direct prestress write
 separate generated anchor elements. Checks cover all elements in all six test phases,
 one apply per phase, no apply for anchor-free models, and error propagation.
 The complete Grasshopper build and calculation remain pending joint acceptance.
+
+## Excavation WP4 (0.8.0.0)
+
+WP3 was confirmed working by the maintainer after 0.7.0.2. WP4 adds 37 assertions:
+18 structural core/preview checks and 19 encrypted Input/Output transfer checks.
+The full build passes 289 assertions and embeds 23 component icons.
+Coverage includes active IDs and phases, independent Output GUIDs, two cut parts,
+duplicate nodal rows, signed forces, modern anchor N, strict m/N units, mismatched
+arrays, missing values, coordinate mismatch, project switches and stale solve receipts.
+Preview tests cover scale zero, displacement-only exaggeration and coincident nodes.
+
+Reference verification used the installed PLAXIS 2D 2025.1 manual sections 9.4.5/9.4.9,
+the installed Python wrapper list protocol and official 2024.1 compatibility notes.
+No live PLAXIS model was modified. Output source names, list/array envelopes, native
+force/displacement values and GH preview remain pending joint acceptance using
+[WP4-STRUCTURAL-RESULTS-TEST.md](../docs/WP4-STRUCTURAL-RESULTS-TEST.md).

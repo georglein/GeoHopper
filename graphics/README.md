@@ -1,12 +1,12 @@
 # GeoHopper component graphics
 
-Complete set for the 20 current components, using the approved outline style.
+Complete set for the 23 current components, using the approved outline style.
 Each category has exactly one accent colour and one pale tint of that colour.
 Dark outlines and white details are shared neutral colours.
 
 ## Files
 
-- `svg/`: 20 editable vector originals, each with a 24 by 24 viewBox.
+- `svg/`: 23 editable vector originals, each with a 24 by 24 viewBox.
 - `png/24/`: transparent 24 by 24 PNGs for the Grasshopper Icon bitmap property.
 - `png/48/` and `png/96/`: larger transparent exports for previews and other uses.
 - `manifest.json`: component class, category, palette and file mapping.
@@ -23,7 +23,7 @@ Dark outlines and white details are shared neutral colours.
 | Material | `#A06439` | Material - Linear Elastic, Material - Mohr-Coulomb, Plate Material, Anchor Material |
 | Model | `#B64C78` | Model, Build Model |
 | Structures | `#4D667D` | Plate, Node-to-Node Anchor |
-| Results | `#8059B1` | Result Point, Read Results, Chord Rotation, Material Quantity |
+| Results | `#8059B1` | Result Point, Read Results, Chord Rotation, Material Quantity, Plate Results, Anchor Results, Plate Deformation Preview |
 
 The requested label is **Material**. The current shared MaterialComponent constructor uses **Materials** in the plugin. The manifest preserves both labels so integration can match the current code without renaming a category.
 

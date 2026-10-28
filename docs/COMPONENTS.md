@@ -1,5 +1,9 @@
 # Component catalogue
 
+Version 0.8.0.0 adds Plate Results, Anchor Results and Plate Deformation Preview.
+WP3 was accepted after 0.7.0.2; WP4 native acceptance is pending. Existing GUIDs and ports
+are unchanged. Follow [WP4-STRUCTURAL-RESULTS-TEST.md](WP4-STRUCTURAL-RESULTS-TEST.md).
+
 Version 0.7.0.0 adds Anchor Material and Node-to-Node Anchor. Model appends optional
 Anchors (input 9); Phase appends optional Active anchors (input 9). Existing port positions
 and GUIDs are preserved. WP2 calculation and WP3 live acceptance remain pending.
@@ -550,3 +554,49 @@ with all anchors inactive and then activates exactly Active anchors. AdjustPrest
 explicitly False in every phase. The initial phase cannot activate anchors. Geometry-only
 builds without phases remain possible. No anchor forces are returned to Grasshopper yet;
 inspect PLAXIS Output until the structural-results package is implemented.
+
+## Plate Results
+
+Category: Results. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed20.
+
+Inputs in order: Calculated model, Connection, Phase (empty = final phase), Structure ID,
+Read (button). Phase and ID refer to the immutable calculated model; the plate must be active.
+Outputs in order: Success, Info, Results, Parts, X [m], Y [m], Ux [m], Uy [m],
+N [N/m], Q [N/m], M [N m/m], Error.
+
+Rows are ordered along the input line from start to end, not by global Y. Duplicate
+nodes and separate cut parts are retained, including possible force discontinuities.
+All numeric lists share row indices. No averaging or envelope calculation is performed.
+PLAXIS local force signs are retained; the source-line ordering does not redefine signs.
+Results is a complete transient snapshot for Plate Deformation Preview.
+
+## Anchor Results
+
+Category: Results. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed21.
+
+Inputs: Calculated model, Connection, Phase, Structure ID, Read (same order as Plate Results).
+Outputs: Success, Info, Results, Parts, X [m], Y [m], Anchor force [N],
+Force per width [N/m], Error.
+
+Reads modern ResultTypes.NodeToNodeAnchor.N, not the pre-2024.1 AnchorForce2D alias.
+Native N is the force per individual anchor. Force per width = N / spacing from the
+calculated model. Do not multiply the native force by spacing. Native nodal rows are
+retained, not summed; two equal endpoint values do not mean two anchors.
+
+Both readers reuse the Input connection to open the selected phase in Output. Each Read
+is explicit; a changed solve, phase, ID or connection invalidates the displayed cache.
+Reads are serialized with Build/Calculate and other readers. Press readers sequentially.
+Failure returns no snapshot or partial numerical lists. Structural reads require m/N
+Output units and a successful calculated-model receipt. No optimizer is included.
+
+## Plate Deformation Preview
+
+Category: Results. GUID: 84a71ed2-4b66-4ce5-972f-c35bab71ed22.
+Inputs: Results (Plate Results snapshot), Display factor (default 100, range 0 to 1e6).
+Outputs: Original curves, Deformed curves, Info.
+
+Converts SI coordinates and displacements into Rhino document units. Each native part
+produces a separate polyline. Coincident nodes with matching displacements are collapsed
+for display only; conflicting displacements are rejected. Polylines connect native nodes
+and do not interpolate FE shape functions. Scaling is visual and never modifies values.
+Use Grasshopper Custom Preview to colour the two curve outputs independently.
