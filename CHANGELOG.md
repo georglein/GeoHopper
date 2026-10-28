@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0.2
+
+- Apply unprestressed phase settings to generated NodeToNodeAnchors, not SourceFeatures.
+- Keep individual SourceFeature activation; apply prestress settings once per phase only
+  when anchors exist. All anchors in a fresh GeoHopper model are currently unprestressed.
+- Correct the protocol fixture to distinguish activation handles from cut elements.
+- The maintainer confirmed the replacement command succeeds in native PLAXIS.
+
+
 ## 0.7.0.1
 
 - Fix phased anchor prestress assignment by using the native property-level set command.

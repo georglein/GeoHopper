@@ -160,3 +160,11 @@ prestress adjustment explicitly. No automatic retries, optimizer loop or externa
 is introduced. The installed 2025.1 AnchorMat, NodetoNodeAnchor, anchormat and n2nanchor
 references define EA [Force], LSpacing [Length] and the native property/command names.
 The protocol tests do not replace native phase/property and structural-connectivity checks.
+
+### Anchor staged properties (0.7.0.2)
+
+After meshing, semantic anchor names resolve to SourceFeatures used for activation.
+They do not expose AdjustPrestress. Apply setproperties to NodeToNodeAnchors once per
+phase to configure generated cut elements. This collection-wide operation is intentional:
+Build creates a fresh managed model and all supported anchors are unprestressed.
+Future individual prestress support must resolve cut elements per source anchor.

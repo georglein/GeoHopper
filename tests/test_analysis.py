@@ -66,6 +66,7 @@ class Handler(BaseHTTPRequestHandler):
             objects = []
             if verb == "gotostages":
                 # Geometry feature GUIDs are replaced by staged SourceFeature handles.
+                state["anchor_prestress"] = {}
                 state["staged"] = {name: str(uuid.uuid4()) for name in state["names"].values()
                                    if name.startswith(("GH_R_", "GH_I_", "GH_L_", "GH_Plate_", "GH_Anchor_"))}
             if verb == "save" and cmd != "save":
@@ -89,12 +90,17 @@ class Handler(BaseHTTPRequestHandler):
                 ok = False
             if "AdjustPrestress" in cmd:
                 parts = cmd.split()
-                # Staged setters address the property, then the phase and value.
-                valid = (verb == "set" and len(parts) == 4
-                         and parts[1].endswith(".AdjustPrestress")
-                         and parts[1].split(".")[0] in state["staged"]
-                         and parts[2] in state["names"] and parts[3] == "False")
+                # Named SourceFeatures have no staged prestress property. The apply
+                # command instead targets all generated anchor cut elements.
+                valid = (len(parts) == 6 and parts[:4] ==
+                         ["apply", "NodeToNodeAnchors", '"setproperties"', '"AdjustPrestress"']
+                         and state["names"].get(parts[4], "").startswith("GH_Phase_")
+                         and parts[5] == "False")
                 ok = ok and valid and not state.get("fail_prestress")
+                if ok:
+                    for name in state["staged"]:
+                        if name.startswith("GH_Anchor_"):
+                            state["anchor_prestress"][(name + "_1", parts[4])] = False
             if verb in ("activate", "deactivate") and cmd.split()[1] != "Soils":
                 ok = ok and cmd.split()[1] in state["staged"].values()
             response = {"commands": [{"feedback": {"success": ok, "returnedobjects": objects,
@@ -139,6 +145,7 @@ if __name__ == "__main__":
         with tempfile.TemporaryDirectory(prefix="GeoHopper-analysis-") as folder:
             r = run(server.server_port, folder, mode="output")
             check("Staged build returns receipt and all phases calculate", r["BuildSuccess"] and r["HasReceipt"] and r["Success"] and len(r["Status"]) == 3)
+            check("Anchor-free model skips native anchor collection", not any("AdjustPrestress" in c for c in commands))
             check("Contacts use dedicated manual-strength material",
                   any('"InterfaceStrengthDetermination" "Manual"' in c and '"Rinter" 0.67' in c for c in commands))
             check("Interface material mode explicitly custom", any('"MaterialMode" "Custom"' in c for c in commands))
@@ -191,14 +198,15 @@ if __name__ == "__main__":
             check("Both anchors assigned their native material", sum(c.startswith("setmaterial ") and c.split()[1] in geometry_anchors for c in commands) == 2)
             staged_anchors = {g for n,g in state["staged"].items() if n.startswith("GH_Anchor_")}
             check("Each phase deactivates all staged anchors first", sum(c.startswith("deactivate ") and c.split()[1] in staged_anchors for c in commands) == 12)
-            check("Prestress adjustment disabled explicitly for every anchor phase", sum(c.startswith("set GH_Anchor_") and ".AdjustPrestress " in c and c.endswith(" False") for c in commands) == 12)
+            check("Prestress applied once per phase to native cut collection", sum(c.startswith('apply NodeToNodeAnchors "setproperties" "AdjustPrestress" ') for c in commands) == 6)
+            check("All generated anchor elements receive every phase value", len(state["anchor_prestress"]) == 12 and all(v is False for v in state["anchor_prestress"].values()))
             activated = [(c.split()[1],state["names"][c.split()[2]]) for c in commands if c.startswith("activate ") and c.split()[1] in staged_anchors]
             check("Anchors activate only at installation and later", len(activated) == 5 and [n for _,n in activated] == ["GH_Phase_Struts","GH_Phase_Struts","GH_Phase_Deepen","GH_Phase_Deepen","GH_Phase_Remove"])
             check("Removed strut stays inactive in final snapshot", activated[-1][0] == state["staged"]["GH_Anchor_Strut2"])
             deeper = next(g for g,n in state["names"].items() if n == "GH_Phase_Deepen")
             check("Second excavation volume stays inactive", not any(c == "activate " + state["staged"]["GH_R_Cut2"] + " " + deeper for c in commands))
             r = run(server.server_port, folder, mode="struts", fail_prestress=True)
-            check("Prestress failure names anchor and phase", not r["BuildSuccess"] and "Preparing phase Initial: disabling prestress adjustment for anchor Strut1" in r["BuildError"])
+            check("Prestress failure names element collection and phase", not r["BuildSuccess"] and "Preparing phase Initial: disabling prestress adjustment for all anchor elements" in r["BuildError"])
             check("Prestress failure prevents receipt and solve", not r["HasReceipt"] and not any(c.startswith("calculate ") for c in commands))
             for verb in ("anchormat", "n2nanchor"):
                 r = run(server.server_port, folder, mode="struts", fail_command=verb)

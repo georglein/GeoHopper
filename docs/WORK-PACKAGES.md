@@ -57,3 +57,13 @@ set GH_Anchor_<ID>.AdjustPrestress <phase> False. Progress diagnostics identify 
 anchor and phase before the command. Full build: 250 assertions passed.
 Published with Rhino closed; prior release backup: artifacts/backups/20261027-234527-810.
 Joint native retest remains pending; keep the GH definition unchanged and rebuild.
+
+## WP3 correction - generated anchor elements (0.7.0.2)
+
+Checkpoint: 19b6eed. Native maintainer diagnostics showed the previous setter targeted
+a SourceFeature rather than an anchor cut element. Use the confirmed apply command on
+NodeToNodeAnchors once per phase; retain per-source activation. The earlier 0.7.0.1 fix
+was insufficient. The replacement command passed the maintainer's native Initial-phase
+test; the full GH build/solve remains pending. Build passed all 252 assertions.
+Installed 0.7.0.2 with Rhino closed. Previous release backup:
+artifacts/backups/20261028-082341-447. No GitHub push.

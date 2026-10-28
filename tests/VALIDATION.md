@@ -1,6 +1,6 @@
 # Validation scope
 
-The release build runs 250 automated assertions covering geometry/material validation,
+The release build runs 252 automated assertions covering geometry/material validation,
 analysis phases, encrypted Input/Output protocol handling, sampled results and numerical
 metrics. Icon dimensions and embedded resource presence are also checked during build.
 
@@ -60,3 +60,15 @@ Two additional checks cover phase/anchor failure diagnostics and refusal to calc
 a partial build. The setter follows the installed native Python staged-property API.
 The isolated native probe could not establish a new server session; native acceptance
 of this hotfix remains pending in the user's running PLAXIS instance.
+
+## Anchor cut-element correction (0.7.0.2)
+
+The maintainer's native diagnostics confirmed GH_Anchor_Strut1 is a SourceFeature,
+without AdjustPrestress. Native apply NodeToNodeAnchors "setproperties"
+"AdjustPrestress" GH_Phase_Initial False returned GH_Anchor_Strut1_1: OK.
+This supersedes the unverified property-level setter introduced in 0.7.0.1.
+
+The full build passed 252 assertions. The fixture rejects direct prestress writes on SourceFeatures and models values on
+separate generated anchor elements. Checks cover all elements in all six test phases,
+one apply per phase, no apply for anchor-free models, and error propagation.
+The complete Grasshopper build and calculation remain pending joint acceptance.
