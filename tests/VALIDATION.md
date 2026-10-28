@@ -1,6 +1,6 @@
 # Validation scope
 
-The release build runs 289 automated assertions covering geometry/material validation,
+The release build runs 296 automated assertions covering geometry/material validation,
 analysis phases, encrypted Input/Output protocol handling, sampled results and numerical
 metrics. Icon dimensions and embedded resource presence are also checked during build.
 
@@ -88,3 +88,11 @@ the installed Python wrapper list protocol and official 2024.1 compatibility not
 No live PLAXIS model was modified. Output source names, list/array envelopes, native
 force/displacement values and GH preview remain pending joint acceptance using
 [WP4-STRUCTURAL-RESULTS-TEST.md](../docs/WP4-STRUCTURAL-RESULTS-TEST.md).
+
+## Structural list-handle compatibility (0.8.0.1)
+
+The maintainer reached GH_Plate_LeftWall_1 / X successfully, but the direct-JSON decoder
+rejected the getresults object envelope. The installed scripting wrapper supports
+listable result objects through count/sublist. Seven new transfer assertions cover
+plate and anchor list handles, JSON scalar items, failed/truncated/oversized lists and
+late nonnumeric values. Native end-to-end acceptance of this compatibility fix is pending.

@@ -73,3 +73,11 @@ was insufficient. The replacement command passed the maintainer's native Initial
 test; the full GH build/solve remains pending. Build passed all 252 assertions.
 Installed 0.7.0.2 with Rhino closed. Previous release backup:
 artifacts/backups/20261028-082341-447. No GitHub push.
+
+## WP4 result-list compatibility (0.8.0.1)
+
+Checkpoint: 9cf25b1. Native testing confirmed source/part resolution reaches
+GH_Plate_LeftWall_1; the first X array failed the JSON-only decoder. Added the native
+listable result path with bounded slicing and seven regression assertions.
+Build: all 296 assertions passed. Installation is pending because Rhino remains running;
+dist is still 0.8.0.0. Native read acceptance remains pending.

@@ -189,3 +189,11 @@ fallback. Protocol doubles do not establish native Output naming/schema compatib
 References: installed scripting wrapper list protocol; Reference Manual 9.4.5/9.4.9;
 [Output structural parts](https://bentleysystems.service-now.com/community?id=kb_article_view&sysparm_article=KB0108371);
 [modern result names](https://bentleysystems.service-now.com/community?id=kb_article&sysparm_article=KB0107771).
+
+### Structural result list handles (0.8.0.1)
+
+getresults can return a listable object reference instead of a JSON numerical array.
+The adapter uses its GUID with the native list/count/sublist protocol, reading at most
+1000 items per slice and 200000 per field. Primitive numbers and JSON scalar list items
+are validated with the same finite-array decoder. Truncated/failed slices invalidate
+the complete snapshot. No model commands or source/phase selection rules are changed.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0.1
+
+- Read listable structural result handles through the native count/sublist API.
+- Retain direct JSON and legacy array support, bounded sizes and atomic failure.
+- Add list-handle regression cases for plates, anchors and malformed replies.
+
+
 ## 0.8.0.0
 
 - Add Plate Results for native nodal coordinates, Ux/Uy, Nx2D, Q2D and M2D.

@@ -13,6 +13,7 @@ import test_analysis as fixture
 
 INFO, PHASE, SOURCE, PART1, PART2 = [str(uuid.uuid4()) for _ in range(5)]
 commands = []
+result_lists = {}
 
 class Output(BaseHTTPRequestHandler):
     """Separate Output identities, including a source group with two cut parts."""
@@ -43,7 +44,18 @@ class Output(BaseHTTPRequestHandler):
             if state.get('wrong_source') and owner==SOURCE: values['Name']='Other'
             response={'queries':{owner:{'properties':{prop:{'value':values[prop]}}}}}
         elif self.path=='/list':
-            query=action['listqueries'][0]; assert query['guid']==SOURCE
+            query=action['listqueries'][0]
+            if query['guid'] in result_lists:
+                values=result_lists[query['guid']]
+                if query['method']=='count': data=200001 if state.get('oversized_list') else len(values)
+                else:
+                    data=values[query['startindex']:query['stopindex']]
+                    if state.get('short_slice'): data=data[:-1]
+                    if state.get('json_items'): data=[{'type':'JSON','json':v} for v in data]
+                response={'listqueries':[{'success':not state.get('failed_list'),'methodname':query['method'],'outputdata':data}]}
+                self.reply(req,response)
+                return
+            assert query['guid']==SOURCE
             count=1 if anchor else 2
             if state.get('empty_parts'): count=0
             if query['method']=='count': data=count
@@ -69,8 +81,15 @@ class Output(BaseHTTPRequestHandler):
             if state.get('mismatch') and field=='Uy': data=data[:-1]
             if state.get('late_failure') and tokens[1]==PART2 and field=='M2D': data=['not found']*len(data)
             feedback={'success':not state.get('native_error'),'extrainfo':'Controlled structural failure','returnedobjects':[{'type':'JSON','json':data}]}
+            if state.get('list_results'):
+                handle=str(uuid.uuid4()); result_lists[handle]=data
+                feedback['returnedobjects']=[{'type':'ResultArray','guid':handle,'islistable':True}]
             response={'commands':[{'feedback':feedback}]}
         else: raise AssertionError(self.path)
+        self.reply(req,response)
+
+    def reply(self,req,response):
+        """Send one authenticated response without logging numerical payloads."""
         response['ReplyCode']=req['ReplyCode']
         data,iv=encryption.encrypt(json.dumps(response),fixture.PASSWORD)
         body=json.dumps({'Response':data,'Code':iv}).encode()
@@ -78,7 +97,7 @@ class Output(BaseHTTPRequestHandler):
 
 def run(inp,out,folder,**options):
     """Perform a full production build, solve and structural read against the doubles."""
-    commands.clear()
+    commands.clear(); result_lists.clear()
     mode=options.pop('mode','structural-anchor' if options.get('anchor') else 'structural-plate')
     return fixture.run(inp.server_port,folder,mode=mode,output_port=out.server_port,**options)
 
@@ -103,6 +122,14 @@ if __name__=='__main__':
             for option in ('foreign_coordinates','mismatch','late_failure','native_error','switch_output'):
                 r=run(inp,out,folder,**{option:True})
                 check(option+' discards partial structural rows',not r['Success'] and not r['Rows'])
+            for anchor in (False,True):
+                r=run(inp,out,folder,list_results=True,anchor=anchor)
+                check('Native list handles read for '+('anchors' if anchor else 'plates'),r['Success'] and len(r['Rows'])==(2 if anchor else 5))
+            r=run(inp,out,folder,list_results=True,json_items=True)
+            check('JSON scalar items inside native lists supported',r['Success'])
+            for option in ('short_slice','failed_list','oversized_list','late_failure'):
+                r=run(inp,out,folder,list_results=True,**{option:True})
+                check(option+' rejects native list without partial results',not r['Success'] and not r['Rows'])
             r=run(inp,out,folder,mode='structural-stale')
             check('Recalculation invalidates structural receipt',not r['Success'] and not commands and 'stale' in r['Error'])
     finally:

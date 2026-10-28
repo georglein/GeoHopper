@@ -37,6 +37,55 @@ namespace GeoHopper
             return numbers;
         }
 
+        /// <summary>Materializes native listable result handles in bounded slices, like the Python wrapper.</summary>
+        private static async Task<double[]> ReadNumericArray(HttpClient http,string password,Dictionary<string,object> feedback)
+        {
+            object raw;
+            if(!feedback.TryGetValue("returnedobjects",out raw)||!(raw is IList)||((IList)raw).Count!=1)
+                return NumericArray(feedback);
+            var entry=((IList)raw)[0] as Dictionary<string,object>;
+            if(entry==null||!entry.ContainsKey("islistable")||!Object.Equals(entry["islistable"],true))
+                return NumericArray(feedback);
+            string owner=PlaxisClient.StringAt(entry,"guid"); Guid parsed;
+            if(!Guid.TryParse(owner,out parsed)) throw new InvalidOperationException("Invalid structural result list identity.");
+            var countValue=await ResultListQuery(http,password,PlaxisClient.Map("guid",owner,"method","count")).ConfigureAwait(false);
+            if(!(countValue is int)||(int)countValue<1||(int)countValue>200000)
+                throw new InvalidOperationException("Missing or oversized structural result list.");
+            int count=(int)countValue; var values=new List<double>();
+            for(int start=0;start<count;start+=1000)
+            {
+                int stop=Math.Min(start+1000,count);
+                var slice=await ResultListQuery(http,password,PlaxisClient.Map("guid",owner,"method","sublist","startindex",start,"stopindex",stop)).ConfigureAwait(false) as IList;
+                if(slice==null||slice.Count!=stop-start) throw new InvalidOperationException("Structural result list changed or returned an incomplete slice.");
+                var numbers=new List<object>();
+                foreach(object item in slice)
+                {
+                    var typed=item as Dictionary<string,object>; object value=item;
+                    if(typed!=null)
+                    {
+                        if(!typed.ContainsKey("type")||Convert.ToString(typed["type"])!="JSON"||!typed.TryGetValue("json",out value))
+                            throw new InvalidOperationException("Unsupported structural result list item.");
+                    }
+                    numbers.Add(value);
+                }
+                values.AddRange(NumericArray(PlaxisClient.Map("returnedvalues",numbers.ToArray())));
+            }
+            return values.ToArray();
+        }
+
+        /// <summary>Checks the authenticated native list-query envelope before consuming its payload.</summary>
+        private static async Task<object> ResultListQuery(HttpClient http,string password,Dictionary<string,object> query)
+        {
+            var response=await PlaxisClient.PostAsync(http,"list",PlaxisClient.Map("listqueries",new[]{query}),password).ConfigureAwait(false);
+            object raw;
+            if(!response.TryGetValue("listqueries",out raw)||!(raw is IList)||((IList)raw).Count!=1)
+                throw new InvalidOperationException("Invalid structural result list response.");
+            var item=((IList)raw)[0] as Dictionary<string,object>;
+            if(item==null||!item.ContainsKey("success")||!Object.Equals(item["success"],true)||!item.TryGetValue("outputdata",out raw))
+                throw new InvalidOperationException("PLAXIS could not read the structural result list.");
+            return raw;
+        }
+
         /// <summary>Uses the installed wrapper's list/sublist protocol to enumerate generated Output parts.</summary>
         private static async Task<List<string>> OutputChildren(HttpClient http,string password,string owner)
         {
@@ -132,7 +181,7 @@ namespace GeoHopper
                             foreach(string field in fields)
                             {
                                 stage="Reading "+request.Id+" / "+partName+" / "+field; report(stage+"...");
-                                arrays.Add(NumericArray(await Command(output,connection.Password,"getresults "+part+" "+outputPhase+" ResultTypes."+family+"."+field+" \"node\"").ConfigureAwait(false)));
+                                arrays.Add(await ReadNumericArray(output,connection.Password,await Command(output,connection.Password,"getresults "+part+" "+outputPhase+" ResultTypes."+family+"."+field+" \"node\"").ConfigureAwait(false)).ConfigureAwait(false));
                             }
                             int count=arrays[0].Length;
                             if(arrays.Any(values=>values.Length!=count)) throw new InvalidOperationException("Structural result arrays have different lengths.");

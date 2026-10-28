@@ -12,7 +12,7 @@ analysis, and read displacements, structural forces and material quantities back
 parametric workflow. The connection uses the local encrypted scripting API directly:
 no Python backend or JSON exchange files are needed at runtime.
 
-Current development version: **0.8.0.0** (structural results awaiting live acceptance). This is a prototype, not a validated design tool.
+Current development version: **0.8.0.1** (structural results awaiting live acceptance). This is a prototype, not a validated design tool.
 Rhino and PLAXIS are separate proprietary products and are not included.
 GeoHopper is an independent project, not an official Seequent, Bentley or McNeel product.
 
